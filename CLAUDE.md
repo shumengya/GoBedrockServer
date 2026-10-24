@@ -53,7 +53,7 @@ go run ./scripts/gen_pm_blockprops            # 重新生成方块属性表，�
 - 要替换的目标文本必须恰好命中一次，命中 0 次或多次都要停下。
 - 改坏之后必须能编译。多出一个未使用的变量导致编译失败，不算验证。
 - 用 `try/finally` 恢复，做完看 `git status` 和 `git diff`，确认没有残留。
-- 没抓到就是测试有洞，补测试，别放过。
+- 没抓到有两种可能：测试有洞，补测试；或者这段代码本来就多余（两处检查重复、状态后面会被重新算出来）。逐条推演清楚再选，别想当然，确认多余就删代码并重新验证。
 
 ### 包变大怎么办
 
@@ -65,6 +65,7 @@ go run ./scripts/gen_pm_blockprops            # 重新生成方块属性表，�
 - `-match` 默认不分大小写，要区分用 `-cmatch`，比如筛小写开头的未导出符号。
 - 从 PowerShell 写 Go 文件用 `[IO.File]::WriteAllText(路径, 内容, (New-Object System.Text.UTF8Encoding($false)))`，别用 `Out-File`、`Set-Content`，会带 BOM 或 CRLF。here-string 追加内容常常少末尾换行，写完跑 `gofmt`。
 - `gofmt -w` 只对自己改过的文件跑。有些文件原本就没按 gofmt 排版，整目录跑会带进无关改动。
+- 有的文件在工作区是 CRLF 换行，而 HEAD 里是 LF。按 LF 写的替换串会命中 0 次，先用 `git ls-files --eol 路径` 看换行，再决定怎么匹配。
 - 同一批并行发出的工具调用没有先后保证。改文件、`git add`、构建、测试之间有依赖的，要分开发，或者放进同一条命令里顺序执行。
 
 ## Go 规范里最容易漏的
