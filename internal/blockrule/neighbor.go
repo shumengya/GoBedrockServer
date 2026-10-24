@@ -18,6 +18,10 @@ func OnNeighborChange(view View, pos Pos) []Change {
 		broken = sugarcaneBroken(view, pos)
 	case BlockCactus:
 		broken = cactusBroken(view, pos)
+	case BlockLever:
+		broken = attachedBroken(view, pos, leverSupportFace(meta))
+	case BlockStoneButton, BlockWoodButton:
+		broken = buttonBroken(view, pos, meta)
 	}
 	if isCrop(id) {
 		broken = cropBroken(view, pos)
@@ -113,4 +117,38 @@ func cropBroken(view View, pos Pos) bool {
 		return false
 	}
 	return belowID != BlockFarmland
+}
+
+// attachedBroken 靠在某个面上的方块（拉杆、按钮），靠着的那面变成透明方块就掉下来。
+func attachedBroken(view View, pos Pos, face int32) bool {
+	var supportID, loaded = neighborBlock(view, pos, face)
+	return loaded && IsTransparent(supportID)
+}
+
+// leverSupportFace 拉杆 meta 低 3 位对应它靠着的那个面：
+// 0 和 7 挂在天花板，1 靠西墙，2 靠东墙，3 靠北墙，4 靠南墙，5 和 6 立在地上。
+func leverSupportFace(meta byte) int32 {
+	switch meta & 7 {
+	case 1:
+		return FaceWest
+	case 2:
+		return FaceEast
+	case 3:
+		return FaceNorth
+	case 4:
+		return FaceSouth
+	case 5, 6:
+		return FaceDown
+	}
+	return FaceUp
+}
+
+// buttonBroken 按钮的 meta 低 3 位是被点击的面，它靠着的是那个面的对面。
+// 面编号 0/1、2/3、4/5 两两相对，异或 1 就是对面。meta 超出 0~5 说明数据不对，不动它。
+func buttonBroken(view View, pos Pos, meta byte) bool {
+	var face int32 = int32(meta & 7)
+	if face > FaceEast {
+		return false
+	}
+	return attachedBroken(view, pos, face^1)
 }

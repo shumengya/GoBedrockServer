@@ -42,6 +42,11 @@ type Server struct {
 	// 加锁顺序：blockMu 最先拿，里面再拿 mu、玩家锁、世界锁；反过来会死锁。
 	blockMu sync.Mutex
 
+	// scheduled 是排队中的方块定时任务（比如按钮弹回），值是到期的 tick 序号，blockTick 是当前序号。
+	// 都只在持有 blockMu 时读写。队列不存盘，重启后丢失；停在按下状态的按钮点一下就会重新排上队。
+	scheduled map[scheduledKey]int64
+	blockTick int64
+
 	stopCh   chan struct{}
 	stopOnce sync.Once
 	saveMu   sync.Mutex
@@ -175,6 +180,7 @@ func (srv *Server) tickLoop() {
 			return
 		case <-ticker.C:
 			srv.tickDroppedItems()
+			srv.tickScheduled()
 			srv.tickDayNight()
 			srv.tickChunkSend()
 			srv.tickLife()
@@ -624,6 +630,10 @@ func (srv *Server) handleUseItem(sess *network.Session, pkt *packets.UseItemPack
 		return
 	}
 
+	// 门、拉杆、按钮这类方块先吃掉点击；潜行时不吃，留给下面的放置流程。
+	if srv.interactBlock(player, pkt) {
+		return
+	}
 	// 手持物一律以服务端记录为准，不信客户端包里的物品栏槽位。
 	var held protocol.Item = player.heldSnapshot()
 	if held.IsAir() {

@@ -65,6 +65,10 @@ func (srv *Server) handlePlayerAction(sess *network.Session, pkt *packets.Player
 		player.setSprinting(true)
 	case packets.ActionStopSprint:
 		player.setSprinting(false)
+	case packets.ActionStartSneak:
+		player.setSneaking(true)
+	case packets.ActionStopSneak:
+		player.setSneaking(false)
 	case packets.ActionJump:
 		srv.onJump(player)
 	}

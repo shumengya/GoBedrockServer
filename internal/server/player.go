@@ -61,6 +61,9 @@ type Player struct {
 	food   foodState
 	mining miningState
 
+	// sneaking 是客户端最近一次上报的潜行状态（START_SNEAK / STOP_SNEAK）。
+	sneaking bool
+
 	// 移动校验用的上一次位置与时间，回拉时也拿这里的位置当基准。
 	lastMoveX, lastMoveY, lastMoveZ float32
 	lastMoveAt                      time.Time

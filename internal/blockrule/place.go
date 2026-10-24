@@ -75,6 +75,13 @@ func Place(view View, req PlaceRequest) ([]Change, bool) {
 	if hasFacing(hand) {
 		meta = facingMeta(DirectionFromYaw(req.Yaw))
 	}
+	if isInteractive(hand) {
+		var interactiveMeta, placeable = interactivePlacementMeta(req, hand, targetID)
+		if !placeable {
+			return nil, false
+		}
+		meta = interactiveMeta
+	}
 	if hand == BlockTorch {
 		var torch, torchOK = torchPlacementMeta(view, req, spot, targetID)
 		if !torchOK {

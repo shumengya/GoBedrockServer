@@ -194,6 +194,19 @@ func (player *Player) heldSnapshot() protocol.Item {
 	return player.HeldItem
 }
 
+// setSneaking 记录客户端上报的潜行状态。潜行时右键不触发门、拉杆这类方块的交互。
+func (player *Player) setSneaking(sneaking bool) {
+	player.mu.Lock()
+	defer player.mu.Unlock()
+	player.sneaking = sneaking
+}
+
+func (player *Player) isSneaking() bool {
+	player.mu.RLock()
+	defer player.mu.RUnlock()
+	return player.sneaking
+}
+
 func (player *Player) gameMode() int32 {
 	player.mu.RLock()
 	defer player.mu.RUnlock()
