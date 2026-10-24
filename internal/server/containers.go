@@ -6,6 +6,7 @@ import "slices"
 import "go-mc-server/internal/network"
 import "go-mc-server/internal/protocol"
 import "go-mc-server/internal/protocol/packets"
+import "go-mc-server/internal/smelting"
 import "go-mc-server/internal/world"
 
 // onBlockPlaced 方块放下后补上它的方块实体。color 是手持物的 meta 低 4 位，只有床用它当颜色。
@@ -102,6 +103,13 @@ func (srv *Server) openContainer(player *Player, posX int32, posY int32, posZ in
 		TargetEID: runtimeID,
 		Slots:     tile.Items,
 	})
+	if tileID == world.TileFurnace {
+		var progress []packets.Packet = furnaceProgressPackets(furnaceStateOf(tile))
+		var index int = 0
+		for index = 0; index < len(progress); index++ {
+			session.SendPacket(progress[index])
+		}
+	}
 }
 
 // openContainerTile 返回玩家当前打开的容器窗口对应的方块实体。窗口没开、方块已经不是容器、
@@ -141,8 +149,26 @@ func (srv *Server) handleContainerWindowSlot(player *Player, pkt *packets.Contai
 	if !usable {
 		return
 	}
-	// 槽位是否越界由 SetTileSlot 判断，越界它会拒绝。
-	srv.playerWorld(player).SetTileSlot(tile.X, tile.Y, tile.Z, int(pkt.Slot), pkt.Item)
+	var current protocol.Item = protocol.Air()
+	var rejected bool = false
+	srv.playerWorld(player).UpdateTile(tile.X, tile.Y, tile.Z, func(live *world.Tile) bool {
+		var slot int = int(pkt.Slot)
+		if slot < 0 || slot >= len(live.Items) {
+			return false
+		}
+		// 熔炉的产物格只能取不能放：不允许凭空多出来，也不允许换成别的东西。
+		if live.ID == world.TileFurnace && slot == smelting.SlotOutput &&
+			!smelting.OutputChangeAllowed(live.Items[slot], pkt.Item) {
+			current = live.Items[slot]
+			rejected = true
+			return false
+		}
+		live.Items[slot] = pkt.Item
+		return true
+	})
+	if rejected {
+		srv.resendContainerSlot(player, int(pkt.Slot), current)
+	}
 }
 
 func (srv *Server) openWorkbench(p *Player, x, y, z int32) {

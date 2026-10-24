@@ -53,6 +53,7 @@ func init() {
 	Register(protocol.IDContainerOpen, func() Packet { return &ContainerOpenPacket{} })
 	Register(protocol.IDContainerSetSlot, func() Packet { return &ContainerSetSlotPacket{} })
 	Register(protocol.IDContainerSetContent, func() Packet { return &ContainerSetContentPacket{} })
+	Register(protocol.IDContainerSetData, func() Packet { return &ContainerSetDataPacket{} })
 	Register(protocol.IDContainerClose, func() Packet { return &ContainerClosePacket{} })
 	Register(protocol.IDBlockEntityData, func() Packet { return &BlockEntityDataPacket{} })
 	Register(protocol.IDDropItem, func() Packet { return &DropItemPacket{} })

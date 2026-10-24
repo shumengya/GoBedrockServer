@@ -38,6 +38,7 @@ type Book struct {
 	recipes []Recipe
 	byID    map[[16]byte]int
 	skipped int
+	smelt   smeltIndex
 }
 
 var defaultBook *Book = nil
@@ -99,6 +100,7 @@ func Load(data []byte) (*Book, error) {
 			book.byID[recipe.ID] = len(book.recipes)
 		}
 		book.recipes = append(book.recipes, recipe)
+		book.indexSmelt(recipe)
 	}
 	return book, nil
 }
