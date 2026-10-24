@@ -29,12 +29,16 @@ func (srv *Server) settleBlocksLocked(worldName string, blockWorld *world.World,
 		var pos blockrule.Pos = queue[0]
 		queue = queue[1:]
 		delete(queued, pos)
-		var changes []blockrule.Change = blockrule.OnNeighborChange(view, pos)
+		var update blockrule.Update = blockrule.OnNeighborUpdate(view, pos)
 		var changeIndex int = 0
-		for changeIndex = 0; changeIndex < len(changes); changeIndex++ {
-			if srv.applyChangeLocked(worldName, blockWorld, changes[changeIndex]) {
-				queue = enqueueAround(queue, queued, changes[changeIndex].Pos)
+		for changeIndex = 0; changeIndex < len(update.Changes); changeIndex++ {
+			if srv.applyChangeLocked(worldName, blockWorld, update.Changes[changeIndex]) {
+				queue = enqueueAround(queue, queued, update.Changes[changeIndex].Pos)
 			}
+		}
+		for changeIndex = 0; changeIndex < len(update.Schedules); changeIndex++ {
+			var request blockrule.Schedule = update.Schedules[changeIndex]
+			srv.scheduleLocked(worldName, request.Pos, request.Delay)
 		}
 	}
 }
