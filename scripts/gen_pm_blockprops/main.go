@@ -37,7 +37,9 @@ var methodNames []string = []string{
 }
 
 var classPattern *regexp.Regexp = regexp.MustCompile(`(?m)^\s*(?:abstract\s+)?class\s+(\w+)\s+extends\s+(\w+)`)
-var idPattern *regexp.Regexp = regexp.MustCompile(`protected\s+\$id\s*=\s*self::(\w+)\s*;`)
+
+// 参考端有的类写 self::XXX，有的写 Block::XXX（红砂岩台阶就是），两种都要认。
+var idPattern *regexp.Regexp = regexp.MustCompile(`protected\s+\$id\s*=\s*(?:self|Block)::(\w+)\s*;`)
 
 // 一行可能声明多个常量：const SPONGE = 19, WET_SPONGE = 19;
 var constLinePattern *regexp.Regexp = regexp.MustCompile(`(?m)^\s*const\s+([^;]+);`)

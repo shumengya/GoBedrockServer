@@ -172,6 +172,10 @@ var propsTable map[byte]Props = map[byte]Props{
 	174: {Solid: true, Transparent: false, Replaceable: false, FlowInto: false, BurnChance: 0, BurnAbility: 0},    // PackedIce
 	175: {Solid: false, Transparent: true, Replaceable: false, FlowInto: true, BurnChance: 0, BurnAbility: 0},     // DoublePlant
 	178: {Solid: false, Transparent: true, Replaceable: false, FlowInto: false, BurnChance: 0, BurnAbility: 0},    // DaylightDetectorInverted
+	179: {Solid: true, Transparent: false, Replaceable: false, FlowInto: false, BurnChance: 0, BurnAbility: 0},    // RedSandstone
+	180: {Solid: true, Transparent: true, Replaceable: false, FlowInto: false, BurnChance: 0, BurnAbility: 0},     // RedSandstoneStairs
+	181: {Solid: true, Transparent: false, Replaceable: false, FlowInto: false, BurnChance: 0, BurnAbility: 0},    // DoubleRedSandstoneSlab
+	182: {Solid: true, Transparent: true, Replaceable: false, FlowInto: false, BurnChance: 0, BurnAbility: 0},     // RedSandstoneSlab
 	183: {Solid: true, Transparent: true, Replaceable: false, FlowInto: false, BurnChance: 0, BurnAbility: 0},     // FenceGateSpruce
 	184: {Solid: true, Transparent: true, Replaceable: false, FlowInto: false, BurnChance: 0, BurnAbility: 0},     // FenceGateBirch
 	185: {Solid: true, Transparent: true, Replaceable: false, FlowInto: false, BurnChance: 0, BurnAbility: 0},     // FenceGateJungle
@@ -183,6 +187,7 @@ var propsTable map[byte]Props = map[byte]Props{
 	196: {Solid: false, Transparent: true, Replaceable: false, FlowInto: false, BurnChance: 0, BurnAbility: 0},    // AcaciaDoor
 	197: {Solid: false, Transparent: true, Replaceable: false, FlowInto: false, BurnChance: 0, BurnAbility: 0},    // DarkOakDoor
 	198: {Solid: true, Transparent: true, Replaceable: false, FlowInto: false, BurnChance: 0, BurnAbility: 0},     // GrassPath
+	199: {Solid: false, Transparent: true, Replaceable: false, FlowInto: true, BurnChance: 0, BurnAbility: 0},     // ItemFrame
 	200: {Solid: true, Transparent: false, Replaceable: false, FlowInto: false, BurnChance: 0, BurnAbility: 0},    // ChorusFlower
 	201: {Solid: true, Transparent: false, Replaceable: false, FlowInto: false, BurnChance: 0, BurnAbility: 0},    // Purpur
 	203: {Solid: true, Transparent: true, Replaceable: false, FlowInto: false, BurnChance: 0, BurnAbility: 0},     // PurpurStairs
