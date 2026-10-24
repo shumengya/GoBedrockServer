@@ -48,6 +48,7 @@ const BlockIce byte = 79
 const BlockCactus byte = 81
 const BlockSugarcane byte = 83
 const BlockPumpkin byte = 86
+const BlockMelonBlock byte = 103
 const BlockLitPumpkin byte = 91
 const BlockTrapdoor byte = 96
 const BlockPumpkinStem byte = 104

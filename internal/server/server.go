@@ -182,6 +182,7 @@ func (srv *Server) tickLoop() {
 			srv.tickDroppedItems()
 			srv.tickScheduled()
 			srv.tickFallingBlocks()
+			srv.tickRandom()
 			srv.tickDayNight()
 			srv.tickChunkSend()
 			srv.tickLife()
