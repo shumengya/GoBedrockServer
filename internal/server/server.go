@@ -642,7 +642,11 @@ func (srv *Server) handleUseItem(sess *network.Session, pkt *packets.UseItemPack
 		logger.Debug("server", "%s 放置忽略: 空手", sess.Username)
 		return
 	}
-	// 工具、食物这类不是放方块用的物品直接忽略；种子、门这类要查表的交给放置规则。
+	// 锄头、骨粉这类用在方块上的物品，先于放置处理。
+	if srv.useItemOnBlock(player, pkt, held) {
+		return
+	}
+	// 其余工具、食物这类不是放方块用的物品直接忽略；种子、门这类要查表的交给放置规则。
 	var _, isBlockItem = blockrule.BlockForItem(held.ID)
 	if !isBlockItem {
 		logger.Debug("server", "%s 放置忽略: 非方块物品 id=%d", sess.Username, held.ID)

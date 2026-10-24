@@ -122,6 +122,8 @@ func (srv *Server) handleEntityFall(sess *network.Session, pkt *packets.EntityFa
 	if player == nil || sess.State() != network.StatePlaying || player.IsDead() {
 		return
 	}
+	// 耕地是否被踩坏跟游戏模式无关，创造模式落地一样会踩。
+	srv.trampleFarmland(player, pkt.FallDistance, defaultDropRandom{})
 	if player.gameMode() != int32(protocol.GameModeSurvival) {
 		return
 	}

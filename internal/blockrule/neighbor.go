@@ -11,6 +11,9 @@ func OnNeighborChange(view View, pos Pos) []Change {
 	if isFallable(id) {
 		return fallChange(view, pos)
 	}
+	if id == BlockFarmland {
+		return farmlandRevert(view, pos)
+	}
 	var broken bool = false
 	switch id {
 	case BlockTorch:

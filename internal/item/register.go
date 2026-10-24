@@ -28,6 +28,7 @@ var unstackableIDs map[int32]bool = map[int32]bool{
 	256: true, 257: true, 258: true, 267: true, 268: true, 269: true, 270: true, 271: true,
 	272: true, 273: true, 274: true, 275: true, 276: true, 277: true, 278: true, 279: true,
 	283: true, 284: true, 285: true, 286: true,
+	290: true, 291: true, 292: true, 293: true, 294: true,
 }
 
 // Register adds an item type. Duplicate IDs merge aliases.

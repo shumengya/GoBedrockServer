@@ -8,6 +8,7 @@ const toolAxe int = 2
 const toolShovel int = 3
 const toolSword int = 4
 const toolShears int = 5
+const toolHoe int = 6
 
 // 等级数值对齐 PocketMine Tool::TIER_*：金镐采集等级只比木镐高，挖不了铁矿。
 const tierNone int = 0
@@ -54,6 +55,11 @@ const itemGoldShovel int32 = 284
 const itemGoldPickaxe int32 = 285
 const itemGoldAxe int32 = 286
 const itemShears int32 = 359
+const itemWoodenHoe int32 = 290
+const itemStoneHoe int32 = 291
+const itemIronHoe int32 = 292
+const itemDiamondHoe int32 = 293
+const itemGoldHoe int32 = 294
 
 // 硬度与工具规则来自 PocketMine 参考端各 Block 类的 getHardness/getToolType。
 // RequiredTool/RequiredTier 取参考端 getDrops 里 isPickaxe() >= TIER 的门槛；
@@ -315,6 +321,11 @@ var toolInfoTable map[int32]toolInfo = map[int32]toolInfo{
 	itemGoldShovel:     {Kind: toolShovel, Tier: tierGold, Speed: 12, MaxDurability: 33, AttackDamage: 2},
 	itemGoldSword:      {Kind: toolSword, Tier: tierGold, Speed: 1.5, MaxDurability: 33, AttackDamage: 5},
 	itemShears:         {Kind: toolShears, Tier: tierNone, Speed: 1, MaxDurability: 239, AttackDamage: 1},
+	itemWoodenHoe:       {Kind: toolHoe, Tier: tierWood, Speed: 1, MaxDurability: 60, AttackDamage: 1},
+	itemStoneHoe:        {Kind: toolHoe, Tier: tierStone, Speed: 1, MaxDurability: 132, AttackDamage: 1},
+	itemIronHoe:         {Kind: toolHoe, Tier: tierIron, Speed: 1, MaxDurability: 251, AttackDamage: 1},
+	itemDiamondHoe:      {Kind: toolHoe, Tier: tierDiamond, Speed: 1, MaxDurability: 1562, AttackDamage: 1},
+	itemGoldHoe:         {Kind: toolHoe, Tier: tierGold, Speed: 1, MaxDurability: 33, AttackDamage: 1},
 }
 
 // toolInfoFor 非工具（含空手）一律当作速度 1、伤害 1 的拳头。
