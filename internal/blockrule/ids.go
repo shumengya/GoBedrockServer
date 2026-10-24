@@ -92,3 +92,5 @@ const BlockRedSandstoneStairs byte = 180
 const BlockDoubleRedSandstoneSlab byte = 181
 const BlockRedSandstoneSlab byte = 182
 const BlockPurpurStairs byte = 203
+const BlockStainedClay byte = 159
+const BlockHardenedClay byte = 172

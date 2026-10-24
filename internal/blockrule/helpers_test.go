@@ -11,17 +11,24 @@ type cellState struct {
 	Meta byte
 }
 
-// mapView 是内存里的假世界：没设置过的格子是空气，所有区块都算已加载。
+// mapView 是内存里的假世界：没设置过的格子是空气，默认所有区块都算已加载，
+// 用 unload 标记某一格所在的区块没加载。
 type mapView struct {
-	cells map[blockrule.Pos]cellState
+	cells    map[blockrule.Pos]cellState
+	unloaded map[blockrule.Pos]bool
 }
 
 func newMapView() *mapView {
-	return &mapView{cells: map[blockrule.Pos]cellState{}}
+	return &mapView{cells: map[blockrule.Pos]cellState{}, unloaded: map[blockrule.Pos]bool{}}
 }
 
 func (view *mapView) set(pos blockrule.Pos, id byte, meta byte) *mapView {
 	view.cells[pos] = cellState{ID: id, Meta: meta}
+	return view
+}
+
+func (view *mapView) unload(pos blockrule.Pos) *mapView {
+	view.unloaded[pos] = true
 	return view
 }
 
@@ -31,7 +38,7 @@ func (view *mapView) Block(pos blockrule.Pos) (byte, byte) {
 }
 
 func (view *mapView) Loaded(pos blockrule.Pos) bool {
-	return true
+	return !view.unloaded[pos]
 }
 
 func at(posX int32, posY int32, posZ int32) blockrule.Pos {

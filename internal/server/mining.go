@@ -3,6 +3,7 @@ package server
 import "math"
 import "time"
 
+import "go-mc-server/internal/blockrule"
 import "go-mc-server/internal/logger"
 import "go-mc-server/internal/network"
 import "go-mc-server/internal/protocol"
@@ -255,6 +256,8 @@ func (srv *Server) handleRemoveBlock(sess *network.Session, pkt *packets.RemoveB
 		int32(blockID)|int32(blockMeta)<<8,
 	)
 	srv.broadcastBlock(worldName, pkt.X, pkt.Y, pkt.Z, 0, 0)
+	// 挖掉一个方块，贴着它的火把、立在它上面的花都要重新评估；创造模式也一样。
+	srv.settleBlocksLocked(worldName, blockWorld, []blockrule.Pos{{PosX: pkt.X, PosY: pkt.Y, PosZ: pkt.Z}})
 	if gameMode == int32(protocol.GameModeCreative) {
 		return
 	}

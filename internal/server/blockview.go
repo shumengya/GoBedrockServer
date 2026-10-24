@@ -18,3 +18,18 @@ func (view loadingView) Block(pos blockrule.Pos) (byte, byte) {
 func (view loadingView) Loaded(pos blockrule.Pos) bool {
 	return true
 }
+
+// peekView 是邻居更新、随机刻用的视图：只读内存里已有的区块，不会触发生成或读盘。
+type peekView struct {
+	target *world.World
+}
+
+func (view peekView) Block(pos blockrule.Pos) (byte, byte) {
+	var id, meta, _ = view.target.Peek(pos.PosX, pos.PosY, pos.PosZ)
+	return id, meta
+}
+
+func (view peekView) Loaded(pos blockrule.Pos) bool {
+	var _, _, loaded = view.target.Peek(pos.PosX, pos.PosY, pos.PosZ)
+	return loaded
+}

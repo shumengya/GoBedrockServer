@@ -74,6 +74,11 @@ func (srv *Server) placeHeldBlock(player *Player, pkt *packets.UseItemPacket, he
 		srv.broadcastBlock(worldName, cell.PosX, cell.PosY, cell.PosZ, uint32(edit.ID), uint32(edit.Meta))
 		srv.onBlockPlaced(player, cell.PosX, cell.PosY, cell.PosZ, edit.ID)
 	}
+	var origins []blockrule.Pos = make([]blockrule.Pos, 0, len(changes))
+	for index = 0; index < len(changes); index++ {
+		origins = append(origins, changes[index].Pos)
+	}
+	srv.settleBlocksLocked(worldName, blockWorld, origins)
 	var slot, remaining, changed = player.ConsumeHeld(1)
 	if changed {
 		srv.sendInventorySlot(player, slot, remaining)

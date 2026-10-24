@@ -21,19 +21,24 @@ type Change struct {
 	Pos  Pos
 	ID   byte
 	Meta byte
+	// Drop 为真表示原来的方块是"自己掉下来"式地消失（比如脚下被挖空的火把）。
+	// 服务端要按空手挖掉来结算掉落物和破坏粒子，而不是悄悄变成空气。
+	Drop bool
 }
 
 // Place 照参考端 Level::useItemOn 的放置流程，算出这次放置要改哪些格子。
 // 它只读 view，不改世界；返回 false 表示这次放不了。
 //
-// 目前只处理 ID 小于 256 的方块物品。种子、门、床这类物品 ID 大于 255 的，
-// 等对应的多格方块和附着规则做完再接进来，现在统一返回 false。
+// 门、床、双层植物占两格，放置规则在多格方块的提交里做，这里先一律返回 false。
 func Place(view View, req PlaceRequest) ([]Change, bool) {
-	if req.ItemID <= 0 || req.ItemID > 255 {
+	var hand, isBlock = BlockForItem(req.ItemID)
+	if !isBlock || isMultiCell(hand) {
 		return nil, false
 	}
-	var hand byte = byte(req.ItemID)
 	var handMeta byte = byte(req.ItemMeta) & 15
+	if req.ItemID > 255 {
+		handMeta = 0
+	}
 	var targetID, targetMeta = view.Block(req.Target)
 	if targetID == BlockAir {
 		return nil, false
@@ -53,6 +58,9 @@ func Place(view View, req PlaceRequest) ([]Change, bool) {
 	}
 	if isSlab(hand) {
 		return placeSlab(view, req, hand, handMeta, at, targetID, targetMeta)
+	}
+	if !supportedAt(view, hand, at) {
+		return nil, false
 	}
 	var meta byte = handMeta
 	if isStair(hand) {

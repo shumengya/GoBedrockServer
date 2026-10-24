@@ -52,7 +52,7 @@ func TestPlaceGeneric(test *testing.T) {
 			Expect:  nil,
 		},
 		{
-			Name:    "小麦种子本阶段还不处理",
+			Name:    "小麦种子种在石头上不行",
 			View:    groundView(),
 			Request: request(295, 0, groundPos, blockrule.FaceUp, 1, 0),
 			Expect:  nil,
