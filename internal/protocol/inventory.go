@@ -13,8 +13,10 @@ const (
 	// InventoryNetworkIds (PocketMine protocol/types/InventoryNetworkIds.php).
 	InventoryTypeContainer = 0
 	InventoryTypeWorkbench = 1
+	InventoryTypeFurnace   = 2
 
-	ChestSize = 27
+	ChestSize   = 27
+	FurnaceSize = 3
 )
 
 // NetworkPlayerInventory pads 36 server slots to the 45-slot PE payload.

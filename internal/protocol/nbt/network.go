@@ -7,12 +7,15 @@ import "go-mc-server/internal/protocol"
 const (
 	TagEnd      byte = 0
 	TagByte     byte = 1
+	TagShort    byte = 2
 	TagInt      byte = 3
 	TagString   byte = 8
 	TagCompound byte = 10
 
-	IDChest = "Chest"
-	IDBed   = "Bed"
+	IDChest   = "Chest"
+	IDBed     = "Bed"
+	IDFurnace = "Furnace"
+	IDSign    = "Sign"
 )
 
 type Writer struct {
@@ -67,5 +70,49 @@ func SpawnBed(x, y, z int32, color byte) []byte {
 		w.Int("y", y)
 		w.Int("z", z)
 		w.Byte("color", color)
+	})
+}
+
+func (w *Writer) Short(name string, v int16) {
+	_ = w.s.WriteByte(TagShort)
+	w.stringRaw(name)
+	w.s.WriteInt16LE(v)
+}
+
+// SpawnPairedChest 是已经和相邻箱子配成大箱子的箱子，客户端靠 pairx、pairz 把两个画成一个。
+func SpawnPairedChest(x, y, z int32, pairX int32, pairZ int32) []byte {
+	return WriteNetworkCompound("", func(w *Writer) {
+		w.String("id", IDChest)
+		w.Int("x", x)
+		w.Int("y", y)
+		w.Int("z", z)
+		w.Int("pairx", pairX)
+		w.Int("pairz", pairZ)
+	})
+}
+
+// SpawnFurnace 带上烧制进度，客户端据此画火焰。
+func SpawnFurnace(x, y, z int32, burnTime int16, cookTime int16) []byte {
+	return WriteNetworkCompound("", func(w *Writer) {
+		w.String("id", IDFurnace)
+		w.Int("x", x)
+		w.Int("y", y)
+		w.Int("z", z)
+		w.Short("BurnTime", burnTime)
+		w.Short("CookTime", cookTime)
+	})
+}
+
+// SpawnSign 告示牌的四行字。
+func SpawnSign(x, y, z int32, lines [4]string) []byte {
+	return WriteNetworkCompound("", func(w *Writer) {
+		w.String("id", IDSign)
+		w.String("Text1", lines[0])
+		w.String("Text2", lines[1])
+		w.String("Text3", lines[2])
+		w.String("Text4", lines[3])
+		w.Int("x", x)
+		w.Int("y", y)
+		w.Int("z", z)
 	})
 }

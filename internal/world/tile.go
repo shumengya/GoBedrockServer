@@ -9,9 +9,12 @@ import (
 )
 
 const (
-	TileChest = nbt.IDChest
-	TileBed   = nbt.IDBed
-	ChestSize = protocol.ChestSize
+	TileChest   = nbt.IDChest
+	TileBed     = nbt.IDBed
+	TileFurnace = nbt.IDFurnace
+	TileSign    = nbt.IDSign
+	FurnaceSize = protocol.FurnaceSize
+	ChestSize   = protocol.ChestSize
 )
 
 // Tile is a block entity (chest inventory / bed color). Workbenches have no tile.
@@ -20,6 +23,19 @@ type Tile struct {
 	X, Y, Z int32
 	Color   byte
 	Items   []protocol.Item
+
+	// 熔炉：剩余燃烧 tick、已经烤了多少 tick、这块燃料一共能烧多少 tick。
+	BurnTime int32
+	CookTime int32
+	MaxTime  int32
+
+	// 箱子：和相邻箱子配成大箱子之后，另一半的 X、Z。
+	Paired bool
+	PairX  int32
+	PairZ  int32
+
+	// 告示牌的四行字。
+	Lines [4]string
 }
 
 func tileKey(x, y, z int32) string {
@@ -51,7 +67,14 @@ func (t Tile) SpawnNBT() []byte {
 	case TileBed:
 		// 颜色 0 是白色，是合法颜色，不能当成没设置而换成红色。
 		return nbt.SpawnBed(t.X, t.Y, t.Z, t.Color)
+	case TileFurnace:
+		return nbt.SpawnFurnace(t.X, t.Y, t.Z, int16(t.BurnTime), int16(t.CookTime))
+	case TileSign:
+		return nbt.SpawnSign(t.X, t.Y, t.Z, t.Lines)
 	default:
+		if t.ID == TileChest && t.Paired {
+			return nbt.SpawnPairedChest(t.X, t.Y, t.Z, t.PairX, t.PairZ)
+		}
 		return nbt.SpawnChest(t.X, t.Y, t.Z)
 	}
 }
@@ -74,10 +97,9 @@ func (w *World) SetTile(t Tile) {
 	w.tileMu.Lock()
 	defer w.tileMu.Unlock()
 	w.ensureTiles()
-	if t.ID == TileChest && len(t.Items) != ChestSize {
-		items := make([]protocol.Item, ChestSize)
-		copy(items, t.Items)
-		t.Items = items
+	var size int = SlotCount(t.ID)
+	if size > 0 && len(t.Items) != size {
+		t.Items = padItems(t.Items, size)
 	}
 	w.tiles[tileKey(t.X, t.Y, t.Z)] = t.clone()
 	w.tilesDirty = true
@@ -143,13 +165,12 @@ func (w *World) LoadTiles(list []Tile) {
 	defer w.tileMu.Unlock()
 	w.tiles = make(map[string]Tile, len(list))
 	for _, t := range list {
-		if t.ID != TileChest && t.ID != TileBed {
+		if !KnownTile(t.ID) {
 			continue
 		}
-		if t.ID == TileChest && len(t.Items) != ChestSize {
-			items := make([]protocol.Item, ChestSize)
-			copy(items, t.Items)
-			t.Items = items
+		var size int = SlotCount(t.ID)
+		if size > 0 && len(t.Items) != size {
+			t.Items = padItems(t.Items, size)
 		}
 		w.tiles[tileKey(t.X, t.Y, t.Z)] = t.clone()
 	}
