@@ -623,8 +623,8 @@ func (srv *Server) handleUseItem(sess *network.Session, pkt *packets.UseItemPack
 		return
 	}
 	var clicked byte = blockIDAt(blockWorld, pkt.X, pkt.Y, pkt.Z)
-	if clicked == world.BlockChest {
-		srv.openChest(player, pkt.X, pkt.Y, pkt.Z)
+	if isContainerBlock(clicked) {
+		srv.openContainer(player, pkt.X, pkt.Y, pkt.Z)
 		return
 	}
 	if clicked == world.BlockCraftingTable {
@@ -750,16 +750,7 @@ func (srv *Server) handleContainerSetSlot(sess *network.Session, pkt *packets.Co
 		p.ApplyInventorySlot(slot, pkt.Item)
 		return
 	}
-	p.mu.RLock()
-	open := p.OpenWindow
-	tx, ty, tz := p.OpenTX, p.OpenTY, p.OpenTZ
-	p.mu.RUnlock()
-	if pkt.WindowID != open {
-		return
-	}
-	if open == protocol.WindowChest {
-		srv.playerWorld(p).SetChestSlot(tx, ty, tz, int(pkt.Slot), pkt.Item)
-	}
+	srv.handleContainerWindowSlot(p, pkt)
 }
 
 func (srv *Server) sendPlayerInventory(p *Player) {

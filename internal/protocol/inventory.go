@@ -8,7 +8,8 @@ const (
 
 	// Window IDs we assign (0 is the player inventory).
 	WindowWorkbench = 1
-	WindowChest     = 2
+	WindowContainer = 2
+	WindowChest     = WindowContainer
 
 	// InventoryNetworkIds (PocketMine protocol/types/InventoryNetworkIds.php).
 	InventoryTypeContainer = 0

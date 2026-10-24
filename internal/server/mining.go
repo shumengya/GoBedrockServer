@@ -253,8 +253,8 @@ func (srv *Server) handleRemoveBlock(sess *network.Session, pkt *packets.RemoveB
 	}
 	logger.Info("server", "%s 破坏方块 id=%d 于 (%d,%d,%d)", sess.Username, blockID, pkt.X, pkt.Y, pkt.Z)
 	var tile, hasTile = blockWorld.RemoveTile(pkt.X, pkt.Y, pkt.Z)
-	if hasTile && tile.ID == world.TileChest {
-		srv.dropChestContents(worldName, tile)
+	if hasTile {
+		srv.releaseTile(worldName, tile)
 	}
 	srv.broadcastLevelEvent(
 		worldName,

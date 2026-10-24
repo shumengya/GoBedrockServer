@@ -79,8 +79,8 @@ func (srv *Server) applyChangeLocked(worldName string, blockWorld *world.World, 
 	var isBed bool = false
 	if edit.ID == blockrule.BlockAir {
 		var tile, hasTile = blockWorld.RemoveTile(posX, posY, posZ)
-		if hasTile && tile.ID == world.TileChest {
-			srv.dropChestContents(worldName, tile)
+		if hasTile {
+			srv.releaseTile(worldName, tile)
 		}
 		bedTile = tile
 		isBed = hasTile && tile.ID == world.TileBed

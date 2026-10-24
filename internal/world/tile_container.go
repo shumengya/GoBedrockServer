@@ -75,3 +75,8 @@ func (w *World) TilePositions(id string) [][3]int32 {
 	})
 	return positions
 }
+
+// NewFurnaceTile 一个空的熔炉：输入、燃料、产物三格都是空的，没在烧。
+func NewFurnaceTile(posX int32, posY int32, posZ int32) Tile {
+	return Tile{ID: TileFurnace, X: posX, Y: posY, Z: posZ, Items: make([]protocol.Item, FurnaceSize)}
+}
