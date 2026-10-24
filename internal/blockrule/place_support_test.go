@@ -6,7 +6,7 @@ import "go-mc-server/internal/blockrule"
 
 // 花、树苗、蘑菇、作物这些方块放下去之前要先看脚下，条件照参考端各方块的 place。
 func TestPlaceNeedsSupport(test *testing.T) {
-	var east blockrule.Pos = at(1, 63, 0)
+	var east blockrule.Pos = posAt(1, 63, 0)
 	var cases []placeCase = []placeCase{
 		{
 			Name:    "红花放在草上",
@@ -113,7 +113,7 @@ func TestPlaceNeedsSupport(test *testing.T) {
 			Name: "仙人掌旁边有石头不行",
 			View: newMapView().
 				set(groundPos, blockrule.BlockSand, 0).
-				set(at(1, 64, 0), blockrule.BlockStone, 0),
+				set(posAt(1, 64, 0), blockrule.BlockStone, 0),
 			Request: request(81, 0, groundPos, blockrule.FaceUp, 1, 0),
 			Expect:  nil,
 		},

@@ -7,7 +7,7 @@ import "go-mc-server/internal/blockrule"
 // 通用放置规则：点击面决定落点，高草和水这类可顶替的方块直接被替换，
 // 空气、非方块物品、世界上下边界外都放不了。
 func TestPlaceGeneric(test *testing.T) {
-	var east blockrule.Pos = at(1, 64, 0)
+	var east blockrule.Pos = posAt(1, 64, 0)
 	var cases []placeCase = []placeCase{
 		{
 			Name:    "点地面顶面放在上方",
@@ -85,18 +85,18 @@ func TestPlaceGeneric(test *testing.T) {
 			Name:    "叠满 8 层的雪片不能顶替，放到它上面",
 			View:    groundView().set(abovePos, blockrule.BlockSnowLayer, 7),
 			Request: request(1, 0, abovePos, blockrule.FaceUp, 1, 0),
-			Expect:  []blockrule.Change{change(at(0, 65, 0), blockrule.BlockStone, 0)},
+			Expect:  []blockrule.Change{change(posAt(0, 65, 0), blockrule.BlockStone, 0)},
 		},
 		{
 			Name:    "世界顶部之外放不了",
-			View:    newMapView().set(at(0, 255, 0), blockrule.BlockStone, 0),
-			Request: request(1, 0, at(0, 255, 0), blockrule.FaceUp, 1, 0),
+			View:    newMapView().set(posAt(0, 255, 0), blockrule.BlockStone, 0),
+			Request: request(1, 0, posAt(0, 255, 0), blockrule.FaceUp, 1, 0),
 			Expect:  nil,
 		},
 		{
 			Name:    "世界底部之外放不了",
-			View:    newMapView().set(at(0, 0, 0), blockrule.BlockBedrock, 0),
-			Request: request(1, 0, at(0, 0, 0), blockrule.FaceDown, 0, 0),
+			View:    newMapView().set(posAt(0, 0, 0), blockrule.BlockBedrock, 0),
+			Request: request(1, 0, posAt(0, 0, 0), blockrule.FaceDown, 0, 0),
 			Expect:  nil,
 		},
 		{
@@ -112,8 +112,8 @@ func TestPlaceGeneric(test *testing.T) {
 // Place 只读 view，不能顺手把世界改了，否则服务端先算后校验的流程会出错。
 func TestPlaceDoesNotMutateView(test *testing.T) {
 	var view *mapView = groundView()
-	var _, ok = blockrule.Place(view, request(1, 0, groundPos, blockrule.FaceUp, 1, 0))
-	if !ok {
+	var _, placed = blockrule.Place(view, request(1, 0, groundPos, blockrule.FaceUp, 1, 0))
+	if !placed {
 		test.Fatal("应该能放下")
 	}
 	var id, _ = view.Block(abovePos)

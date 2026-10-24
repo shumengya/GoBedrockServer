@@ -42,9 +42,9 @@ func TestBlockForItem(test *testing.T) {
 	for index = 0; index < len(cases); index++ {
 		var item itemCase = cases[index]
 		test.Run(item.Name, func(sub *testing.T) {
-			var actual, ok = blockrule.BlockForItem(item.ItemID)
-			if ok != item.Placable {
-				sub.Fatalf("物品 %d 可放置期望 %v，实际 %v", item.ItemID, item.Placable, ok)
+			var actual, placeable = blockrule.BlockForItem(item.ItemID)
+			if placeable != item.Placable {
+				sub.Fatalf("物品 %d 可放置期望 %v，实际 %v", item.ItemID, item.Placable, placeable)
 			}
 			if actual != item.Expect {
 				sub.Fatalf("物品 %d 期望方块 %d，实际 %d", item.ItemID, item.Expect, actual)

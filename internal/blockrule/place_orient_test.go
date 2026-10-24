@@ -36,13 +36,13 @@ func TestPlaceStairFacing(test *testing.T) {
 			Name:    "点侧面上半部分倒置",
 			View:    newMapView().set(abovePos, blockrule.BlockStone, 0),
 			Request: request(53, 0, abovePos, blockrule.FaceEast, 0.8, 270),
-			Expect:  []blockrule.Change{change(at(1, 64, 0), blockrule.BlockWoodStairs, 0|4)},
+			Expect:  []blockrule.Change{change(posAt(1, 64, 0), blockrule.BlockWoodStairs, 0|4)},
 		},
 		{
 			Name:    "点侧面下半部分正放",
 			View:    newMapView().set(abovePos, blockrule.BlockStone, 0),
 			Request: request(53, 0, abovePos, blockrule.FaceEast, 0.2, 270),
-			Expect:  []blockrule.Change{change(at(1, 64, 0), blockrule.BlockWoodStairs, 0)},
+			Expect:  []blockrule.Change{change(posAt(1, 64, 0), blockrule.BlockWoodStairs, 0)},
 		},
 		{
 			Name:    "点方块底面倒置",
@@ -85,19 +85,19 @@ func TestPlaceLogAxis(test *testing.T) {
 			Name:    "点南面横向 Z",
 			View:    newMapView().set(abovePos, blockrule.BlockStone, 0),
 			Request: request(17, 2, abovePos, blockrule.FaceSouth, 0.5, 0),
-			Expect:  []blockrule.Change{change(at(0, 64, 1), blockrule.BlockLog, 2|8)},
+			Expect:  []blockrule.Change{change(posAt(0, 64, 1), blockrule.BlockLog, 2|8)},
 		},
 		{
 			Name:    "点北面横向 Z",
 			View:    newMapView().set(abovePos, blockrule.BlockStone, 0),
 			Request: request(17, 0, abovePos, blockrule.FaceNorth, 0.5, 0),
-			Expect:  []blockrule.Change{change(at(0, 64, -1), blockrule.BlockLog, 8)},
+			Expect:  []blockrule.Change{change(posAt(0, 64, -1), blockrule.BlockLog, 8)},
 		},
 		{
 			Name:    "点东面横向 X",
 			View:    newMapView().set(abovePos, blockrule.BlockStone, 0),
 			Request: request(17, 3, abovePos, blockrule.FaceEast, 0.5, 0),
-			Expect:  []blockrule.Change{change(at(1, 64, 0), blockrule.BlockLog, 3|4)},
+			Expect:  []blockrule.Change{change(posAt(1, 64, 0), blockrule.BlockLog, 3|4)},
 		},
 		{
 			Name:    "物品自带的方向位被丢弃",
@@ -109,7 +109,7 @@ func TestPlaceLogAxis(test *testing.T) {
 			Name:    "金合欢原木同样处理",
 			View:    newMapView().set(abovePos, blockrule.BlockStone, 0),
 			Request: request(162, 1, abovePos, blockrule.FaceWest, 0.5, 0),
-			Expect:  []blockrule.Change{change(at(-1, 64, 0), blockrule.BlockWood2, 1|4)},
+			Expect:  []blockrule.Change{change(posAt(-1, 64, 0), blockrule.BlockWood2, 1|4)},
 		},
 	}
 	runPlaceCases(test, cases)
@@ -161,7 +161,7 @@ func TestPlaceFacingBlocks(test *testing.T) {
 
 // 火把：点不透明方块的顶面或侧面就贴着放；点透明方块或底面，只有脚下是不透明方块才能立着放。
 func TestPlaceTorch(test *testing.T) {
-	var glassPos blockrule.Pos = at(0, 64, 0)
+	var glassPos blockrule.Pos = posAt(0, 64, 0)
 	var cases []placeCase = []placeCase{
 		{
 			Name:    "点顶面立在地上",
@@ -173,58 +173,58 @@ func TestPlaceTorch(test *testing.T) {
 			Name:    "点东面",
 			View:    newMapView().set(abovePos, blockrule.BlockStone, 0),
 			Request: request(50, 0, abovePos, blockrule.FaceEast, 0.5, 0),
-			Expect:  []blockrule.Change{change(at(1, 64, 0), blockrule.BlockTorch, 1)},
+			Expect:  []blockrule.Change{change(posAt(1, 64, 0), blockrule.BlockTorch, 1)},
 		},
 		{
 			Name:    "点西面",
 			View:    newMapView().set(abovePos, blockrule.BlockStone, 0),
 			Request: request(50, 0, abovePos, blockrule.FaceWest, 0.5, 0),
-			Expect:  []blockrule.Change{change(at(-1, 64, 0), blockrule.BlockTorch, 2)},
+			Expect:  []blockrule.Change{change(posAt(-1, 64, 0), blockrule.BlockTorch, 2)},
 		},
 		{
 			Name:    "点南面",
 			View:    newMapView().set(abovePos, blockrule.BlockStone, 0),
 			Request: request(50, 0, abovePos, blockrule.FaceSouth, 0.5, 0),
-			Expect:  []blockrule.Change{change(at(0, 64, 1), blockrule.BlockTorch, 3)},
+			Expect:  []blockrule.Change{change(posAt(0, 64, 1), blockrule.BlockTorch, 3)},
 		},
 		{
 			Name:    "点北面",
 			View:    newMapView().set(abovePos, blockrule.BlockStone, 0),
 			Request: request(50, 0, abovePos, blockrule.FaceNorth, 0.5, 0),
-			Expect:  []blockrule.Change{change(at(0, 64, -1), blockrule.BlockTorch, 4)},
+			Expect:  []blockrule.Change{change(posAt(0, 64, -1), blockrule.BlockTorch, 4)},
 		},
 		{
 			Name: "点玻璃侧面，落点脚下是石头，立着放",
 			View: newMapView().
-				set(at(0, 64, 0), blockrule.BlockGlass, 0).
-				set(at(1, 63, 0), blockrule.BlockStone, 0),
+				set(posAt(0, 64, 0), blockrule.BlockGlass, 0).
+				set(posAt(1, 63, 0), blockrule.BlockStone, 0),
 			Request: request(50, 0, glassPos, blockrule.FaceEast, 0.5, 0),
-			Expect:  []blockrule.Change{change(at(1, 64, 0), blockrule.BlockTorch, 0)},
+			Expect:  []blockrule.Change{change(posAt(1, 64, 0), blockrule.BlockTorch, 0)},
 		},
 		{
 			Name:    "点玻璃侧面，落点脚下是空气，放不了",
-			View:    newMapView().set(at(0, 64, 0), blockrule.BlockGlass, 0),
+			View:    newMapView().set(posAt(0, 64, 0), blockrule.BlockGlass, 0),
 			Request: request(50, 0, glassPos, blockrule.FaceEast, 0.5, 0),
 			Expect:  nil,
 		},
 		{
 			Name: "点玻璃侧面，落点脚下是围栏，立着放",
 			View: newMapView().
-				set(at(0, 64, 0), blockrule.BlockGlass, 0).
-				set(at(1, 63, 0), blockrule.BlockFence, 0),
+				set(posAt(0, 64, 0), blockrule.BlockGlass, 0).
+				set(posAt(1, 63, 0), blockrule.BlockFence, 0),
 			Request: request(50, 0, glassPos, blockrule.FaceEast, 0.5, 0),
-			Expect:  []blockrule.Change{change(at(1, 64, 0), blockrule.BlockTorch, 0)},
+			Expect:  []blockrule.Change{change(posAt(1, 64, 0), blockrule.BlockTorch, 0)},
 		},
 		{
 			Name:    "点方块底面，脚下是石头，立着放",
-			View:    groundView().set(at(0, 65, 0), blockrule.BlockStone, 0),
-			Request: request(50, 0, at(0, 65, 0), blockrule.FaceDown, 0, 0),
+			View:    groundView().set(posAt(0, 65, 0), blockrule.BlockStone, 0),
+			Request: request(50, 0, posAt(0, 65, 0), blockrule.FaceDown, 0, 0),
 			Expect:  []blockrule.Change{change(abovePos, blockrule.BlockTorch, 0)},
 		},
 		{
 			Name:    "点方块底面，脚下是空气，放不了",
-			View:    newMapView().set(at(0, 70, 0), blockrule.BlockStone, 0),
-			Request: request(50, 0, at(0, 70, 0), blockrule.FaceDown, 0, 0),
+			View:    newMapView().set(posAt(0, 70, 0), blockrule.BlockStone, 0),
+			Request: request(50, 0, posAt(0, 70, 0), blockrule.FaceDown, 0, 0),
 			Expect:  nil,
 		},
 	}

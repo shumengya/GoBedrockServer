@@ -41,13 +41,13 @@ func (view *mapView) Loaded(pos blockrule.Pos) bool {
 	return !view.unloaded[pos]
 }
 
-func at(posX int32, posY int32, posZ int32) blockrule.Pos {
+func posAt(posX int32, posY int32, posZ int32) blockrule.Pos {
 	return blockrule.Pos{PosX: posX, PosY: posY, PosZ: posZ}
 }
 
 // 测试里反复用到的两个位置：地面方块和它正上方的空位。
-var groundPos blockrule.Pos = at(0, 63, 0)
-var abovePos blockrule.Pos = at(0, 64, 0)
+var groundPos blockrule.Pos = posAt(0, 63, 0)
+var abovePos blockrule.Pos = posAt(0, 64, 0)
 
 // groundView 返回只有一块石头地面的世界。
 func groundView() *mapView {
@@ -93,9 +93,9 @@ func runPlaceCases(test *testing.T, cases []placeCase) {
 	for index = 0; index < len(cases); index++ {
 		var item placeCase = cases[index] // 闭包里用循环变量前先拷贝
 		test.Run(item.Name, func(sub *testing.T) {
-			var changes, ok = blockrule.Place(item.View, item.Request)
-			if ok != (len(item.Expect) > 0) {
-				sub.Fatalf("可放置期望 %v，实际 %v（改动 %+v）", len(item.Expect) > 0, ok, changes)
+			var changes, placed = blockrule.Place(item.View, item.Request)
+			if placed != (len(item.Expect) > 0) {
+				sub.Fatalf("可放置期望 %v，实际 %v（改动 %+v）", len(item.Expect) > 0, placed, changes)
 			}
 			if !slices.Equal(changes, item.Expect) {
 				sub.Fatalf("期望改动 %+v，实际 %+v", item.Expect, changes)

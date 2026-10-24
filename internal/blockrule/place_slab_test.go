@@ -6,7 +6,7 @@ import "go-mc-server/internal/blockrule"
 
 // 半砖：点顶面放下半砖，点底面放上半砖，点侧面看点击位置高于还是低于中线。
 func TestPlaceSlabHalf(test *testing.T) {
-	var ceilingPos blockrule.Pos = at(0, 65, 0)
+	var ceilingPos blockrule.Pos = posAt(0, 65, 0)
 	var cases []placeCase = []placeCase{
 		{
 			Name:    "点地面顶面放下半砖",
@@ -24,13 +24,13 @@ func TestPlaceSlabHalf(test *testing.T) {
 			Name:    "点侧面上半部分放上半砖",
 			View:    newMapView().set(abovePos, blockrule.BlockStone, 0),
 			Request: request(44, 0, abovePos, blockrule.FaceEast, 0.8, 0),
-			Expect:  []blockrule.Change{change(at(1, 64, 0), blockrule.BlockSlab, 8)},
+			Expect:  []blockrule.Change{change(posAt(1, 64, 0), blockrule.BlockSlab, 8)},
 		},
 		{
 			Name:    "点侧面下半部分放下半砖",
 			View:    newMapView().set(abovePos, blockrule.BlockStone, 0),
 			Request: request(44, 0, abovePos, blockrule.FaceEast, 0.2, 0),
-			Expect:  []blockrule.Change{change(at(1, 64, 0), blockrule.BlockSlab, 0)},
+			Expect:  []blockrule.Change{change(posAt(1, 64, 0), blockrule.BlockSlab, 0)},
 		},
 		{
 			Name:    "物品 meta 里的上半位被丢弃",
@@ -75,7 +75,7 @@ func TestPlaceSlabMerge(test *testing.T) {
 			Name:    "点下半砖侧面下半部分不合成，放到旁边",
 			View:    newMapView().set(abovePos, blockrule.BlockSlab, 0),
 			Request: request(44, 0, abovePos, blockrule.FaceEast, 0.2, 0),
-			Expect:  []blockrule.Change{change(at(1, 64, 0), blockrule.BlockSlab, 0)},
+			Expect:  []blockrule.Change{change(posAt(1, 64, 0), blockrule.BlockSlab, 0)},
 		},
 		{
 			Name:    "点上半砖侧面下半部分合成",
@@ -111,7 +111,7 @@ func TestPlaceSlabMerge(test *testing.T) {
 			Name:    "普通半砖和木半砖不互相合成，放到木半砖上方",
 			View:    groundView().set(abovePos, blockrule.BlockWoodSlab, 0),
 			Request: request(44, 0, abovePos, blockrule.FaceUp, 1, 0),
-			Expect:  []blockrule.Change{change(at(0, 65, 0), blockrule.BlockSlab, 0)},
+			Expect:  []blockrule.Change{change(posAt(0, 65, 0), blockrule.BlockSlab, 0)},
 		},
 	}
 	runPlaceCases(test, cases)

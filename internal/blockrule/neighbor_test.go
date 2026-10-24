@@ -32,8 +32,8 @@ func runNeighborCases(test *testing.T, cases []neighborCase) {
 }
 
 func TestNeighborTorch(test *testing.T) {
-	var west blockrule.Pos = at(-1, 64, 0)
-	var north blockrule.Pos = at(0, 64, -1)
+	var west blockrule.Pos = posAt(-1, 64, 0)
+	var north blockrule.Pos = posAt(0, 64, -1)
 	var cases []neighborCase = []neighborCase{
 		{
 			Name: "立在石头上不掉",
@@ -175,7 +175,7 @@ func TestNeighborPlants(test *testing.T) {
 }
 
 func TestNeighborSugarcaneAndCactus(test *testing.T) {
-	var east blockrule.Pos = at(1, 64, 0)
+	var east blockrule.Pos = posAt(1, 64, 0)
 	var cases []neighborCase = []neighborCase{
 		{
 			Name: "甘蔗在沙子上不掉",

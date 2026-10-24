@@ -30,23 +30,23 @@ func placeSlab(
 	req PlaceRequest,
 	hand byte,
 	handMeta byte,
-	at Pos,
+	spot Pos,
 	targetID byte,
 	targetMeta byte,
 ) ([]Change, bool) {
 	var double, _ = doubleSlabOf(hand)
 	var variant byte = handMeta & 7
-	var atID, atMeta = view.Block(at)
-	var sameAt bool = atID == hand && atMeta&7 == variant
+	var spotID, spotMeta = view.Block(spot)
+	var sameSpot bool = spotID == hand && spotMeta&7 == variant
 	var sameTarget bool = targetID == hand && targetMeta&7 == variant
-	var merged []Change = []Change{{Pos: at, ID: double, Meta: variant}}
+	var merged []Change = []Change{{Pos: spot, ID: double, Meta: variant}}
 	var meta byte = variant
 	switch req.Face {
 	case FaceDown:
 		if sameTarget && targetMeta&8 != 0 {
 			return []Change{{Pos: req.Target, ID: double, Meta: variant}}, true
 		}
-		if sameAt {
+		if sameSpot {
 			return merged, true
 		}
 		meta |= 8
@@ -54,16 +54,16 @@ func placeSlab(
 		if sameTarget && targetMeta&8 == 0 {
 			return []Change{{Pos: req.Target, ID: double, Meta: variant}}, true
 		}
-		if sameAt {
+		if sameSpot {
 			return merged, true
 		}
 	default:
-		if sameAt {
+		if sameSpot {
 			return merged, true
 		}
 		if req.ClickY > 0.5 {
 			meta |= 8
 		}
 	}
-	return []Change{{Pos: at, ID: hand, Meta: meta}}, true
+	return []Change{{Pos: spot, ID: hand, Meta: meta}}, true
 }

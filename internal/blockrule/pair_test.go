@@ -15,8 +15,8 @@ type pairCase struct {
 // PairedHalf 找门、床、双层植物的另一半。另一半必须真的在那里，种类、上下（头脚）位、
 // 床的朝向、双层植物的品种都对得上才算配成一对。
 func TestPairedHalf(test *testing.T) {
-	var upper blockrule.Pos = at(0, 65, 0)
-	var headPos blockrule.Pos = at(1, 64, 0)
+	var upper blockrule.Pos = posAt(0, 65, 0)
+	var headPos blockrule.Pos = posAt(1, 64, 0)
 	var cases []pairCase = []pairCase{
 		{
 			Name:   "门下半找到上半",
@@ -121,8 +121,8 @@ func TestPairedHalf(test *testing.T) {
 
 // 两格方块缺了另一半就要掉下来；门和双层植物的下半脚下撑不住也要掉，床不看脚下。
 func TestNeighborPairs(test *testing.T) {
-	var upper blockrule.Pos = at(0, 65, 0)
-	var headPos blockrule.Pos = at(1, 64, 0)
+	var upper blockrule.Pos = posAt(0, 65, 0)
+	var headPos blockrule.Pos = posAt(1, 64, 0)
 	var door *mapView = newMapView().set(abovePos, blockrule.BlockWoodDoor, 0).set(upper, blockrule.BlockWoodDoor, 8)
 	var cases []neighborCase = []neighborCase{
 		{

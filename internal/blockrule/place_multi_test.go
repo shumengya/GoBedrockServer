@@ -8,7 +8,7 @@ import "go-mc-server/internal/blockrule"
 // 旁边有同种门或者"远侧是墙、近侧是空"时上半再加 1 表示门轴在另一边。
 // 偏航 0 朝南，90 朝西，180 朝北，270 朝东。
 func TestPlaceDoor(test *testing.T) {
-	var upper blockrule.Pos = at(0, 65, 0)
+	var upper blockrule.Pos = posAt(0, 65, 0)
 	var cases []placeCase = []placeCase{
 		{
 			Name:    "朝东",
@@ -66,7 +66,7 @@ func TestPlaceDoor(test *testing.T) {
 		},
 		{
 			Name:    "朝东时北边是空、南边是石头，近侧是空远侧是墙，门轴换边",
-			View:    groundView().set(at(0, 64, 1), blockrule.BlockStone, 0),
+			View:    groundView().set(posAt(0, 64, 1), blockrule.BlockStone, 0),
 			Request: request(324, 0, groundPos, blockrule.FaceUp, 1, 270),
 			Expect: []blockrule.Change{
 				change(abovePos, blockrule.BlockWoodDoor, 0),
@@ -75,7 +75,7 @@ func TestPlaceDoor(test *testing.T) {
 		},
 		{
 			Name:    "近侧已经有一扇同种门，门轴换边",
-			View:    groundView().set(at(0, 64, -1), blockrule.BlockWoodDoor, 0),
+			View:    groundView().set(posAt(0, 64, -1), blockrule.BlockWoodDoor, 0),
 			Request: request(324, 0, groundPos, blockrule.FaceUp, 1, 270),
 			Expect: []blockrule.Change{
 				change(abovePos, blockrule.BlockWoodDoor, 0),
@@ -85,8 +85,8 @@ func TestPlaceDoor(test *testing.T) {
 		{
 			Name: "两侧都是墙，近侧不透明，门轴不换边",
 			View: groundView().
-				set(at(0, 64, -1), blockrule.BlockStone, 0).
-				set(at(0, 64, 1), blockrule.BlockStone, 0),
+				set(posAt(0, 64, -1), blockrule.BlockStone, 0).
+				set(posAt(0, 64, 1), blockrule.BlockStone, 0),
 			Request: request(324, 0, groundPos, blockrule.FaceUp, 1, 270),
 			Expect: []blockrule.Change{
 				change(abovePos, blockrule.BlockWoodDoor, 0),
@@ -113,8 +113,8 @@ func TestPlaceDoor(test *testing.T) {
 		},
 		{
 			Name:    "世界最高处放不了，上半会超出高度",
-			View:    newMapView().set(at(0, 254, 0), blockrule.BlockStone, 0),
-			Request: request(324, 0, at(0, 254, 0), blockrule.FaceUp, 1, 270),
+			View:    newMapView().set(posAt(0, 254, 0), blockrule.BlockStone, 0),
+			Request: request(324, 0, posAt(0, 254, 0), blockrule.FaceUp, 1, 270),
 			Expect:  nil,
 		},
 		{
@@ -136,38 +136,38 @@ func TestPlaceBed(test *testing.T) {
 	var cases []placeCase = []placeCase{
 		{
 			Name:    "朝东，床头在东边",
-			View:    groundView().set(at(1, 63, 0), blockrule.BlockStone, 0),
+			View:    groundView().set(posAt(1, 63, 0), blockrule.BlockStone, 0),
 			Request: request(355, 14, groundPos, blockrule.FaceUp, 1, 270),
 			Expect: []blockrule.Change{
 				change(abovePos, blockrule.BlockBed, 3),
-				change(at(1, 64, 0), blockrule.BlockBed, 3|8),
+				change(posAt(1, 64, 0), blockrule.BlockBed, 3|8),
 			},
 		},
 		{
 			Name:    "朝南，床头在南边",
-			View:    groundView().set(at(0, 63, 1), blockrule.BlockStone, 0),
+			View:    groundView().set(posAt(0, 63, 1), blockrule.BlockStone, 0),
 			Request: request(355, 14, groundPos, blockrule.FaceUp, 1, 0),
 			Expect: []blockrule.Change{
 				change(abovePos, blockrule.BlockBed, 0),
-				change(at(0, 64, 1), blockrule.BlockBed, 8),
+				change(posAt(0, 64, 1), blockrule.BlockBed, 8),
 			},
 		},
 		{
 			Name:    "朝西，床头在西边",
-			View:    groundView().set(at(-1, 63, 0), blockrule.BlockStone, 0),
+			View:    groundView().set(posAt(-1, 63, 0), blockrule.BlockStone, 0),
 			Request: request(355, 14, groundPos, blockrule.FaceUp, 1, 90),
 			Expect: []blockrule.Change{
 				change(abovePos, blockrule.BlockBed, 1),
-				change(at(-1, 64, 0), blockrule.BlockBed, 1|8),
+				change(posAt(-1, 64, 0), blockrule.BlockBed, 1|8),
 			},
 		},
 		{
 			Name:    "朝北，床头在北边",
-			View:    groundView().set(at(0, 63, -1), blockrule.BlockStone, 0),
+			View:    groundView().set(posAt(0, 63, -1), blockrule.BlockStone, 0),
 			Request: request(355, 14, groundPos, blockrule.FaceUp, 1, 180),
 			Expect: []blockrule.Change{
 				change(abovePos, blockrule.BlockBed, 2),
-				change(at(0, 64, -1), blockrule.BlockBed, 2|8),
+				change(posAt(0, 64, -1), blockrule.BlockBed, 2|8),
 			},
 		},
 		{
@@ -179,8 +179,8 @@ func TestPlaceBed(test *testing.T) {
 		{
 			Name: "床头那格被占了放不了",
 			View: groundView().
-				set(at(1, 63, 0), blockrule.BlockStone, 0).
-				set(at(1, 64, 0), blockrule.BlockStone, 0),
+				set(posAt(1, 63, 0), blockrule.BlockStone, 0).
+				set(posAt(1, 64, 0), blockrule.BlockStone, 0),
 			Request: request(355, 14, groundPos, blockrule.FaceUp, 1, 270),
 			Expect:  nil,
 		},
@@ -188,19 +188,19 @@ func TestPlaceBed(test *testing.T) {
 			Name: "床脚脚下是玻璃放不了",
 			View: newMapView().
 				set(groundPos, blockrule.BlockGlass, 0).
-				set(at(1, 63, 0), blockrule.BlockStone, 0),
+				set(posAt(1, 63, 0), blockrule.BlockStone, 0),
 			Request: request(355, 14, groundPos, blockrule.FaceUp, 1, 270),
 			Expect:  nil,
 		},
 		{
 			Name: "床头那格是高草可以顶替",
 			View: groundView().
-				set(at(1, 63, 0), blockrule.BlockStone, 0).
-				set(at(1, 64, 0), blockrule.BlockTallGrass, 1),
+				set(posAt(1, 63, 0), blockrule.BlockStone, 0).
+				set(posAt(1, 64, 0), blockrule.BlockTallGrass, 1),
 			Request: request(355, 0, groundPos, blockrule.FaceUp, 1, 270),
 			Expect: []blockrule.Change{
 				change(abovePos, blockrule.BlockBed, 3),
-				change(at(1, 64, 0), blockrule.BlockBed, 3|8),
+				change(posAt(1, 64, 0), blockrule.BlockBed, 3|8),
 			},
 		},
 	}
@@ -209,7 +209,7 @@ func TestPlaceBed(test *testing.T) {
 
 // 双层植物：下半放在草或泥土上，上半在正上方，上半 meta 多一个 8。
 func TestPlaceDoublePlant(test *testing.T) {
-	var upper blockrule.Pos = at(0, 65, 0)
+	var upper blockrule.Pos = posAt(0, 65, 0)
 	var grass *mapView = newMapView().set(groundPos, blockrule.BlockGrass, 0)
 	var cases []placeCase = []placeCase{
 		{

@@ -71,7 +71,7 @@ func (srv *Server) applyChangeLocked(worldName string, blockWorld *world.World, 
 	if !blockWorld.SetBlock(posX, posY, posZ, edit.ID, edit.Meta) {
 		return false
 	}
-	var bedTile world.Tile
+	var bedTile world.Tile = world.Tile{}
 	var isBed bool = false
 	if edit.ID == blockrule.BlockAir {
 		var tile, hasTile = blockWorld.RemoveTile(posX, posY, posZ)

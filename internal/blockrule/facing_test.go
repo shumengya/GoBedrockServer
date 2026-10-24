@@ -91,9 +91,9 @@ func TestPosSide(test *testing.T) {
 	for index = 0; index < len(cases); index++ {
 		var item sideCase = cases[index]
 		test.Run(item.Name, func(sub *testing.T) {
-			var actual, ok = origin.Side(item.Face)
-			if !ok || actual != item.Expect {
-				sub.Fatalf("面 %d 期望 %+v，实际 %+v ok=%v", item.Face, item.Expect, actual, ok)
+			var actual, found = origin.Side(item.Face)
+			if !found || actual != item.Expect {
+				sub.Fatalf("面 %d 期望 %+v，实际 %+v found=%v", item.Face, item.Expect, actual, found)
 			}
 		})
 	}

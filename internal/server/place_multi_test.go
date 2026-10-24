@@ -1,9 +1,12 @@
 package server
 
+import "maps"
+import "slices"
 import "testing"
 import "time"
 
 import "go-mc-server/internal/blockrule"
+import "go-mc-server/internal/entity"
 import "go-mc-server/internal/protocol"
 import "go-mc-server/internal/world"
 
@@ -25,7 +28,10 @@ func multiTestDropped(fixture *adminFixture, itemID int32, meta int32) int {
 	fixture.srv.mu.RLock()
 	defer fixture.srv.mu.RUnlock()
 	var total int = 0
-	for _, instance := range fixture.srv.entities {
+	var ids []int64 = slices.Sorted(maps.Keys(fixture.srv.entities))
+	var index int = 0
+	for index = 0; index < len(ids); index++ {
+		var instance *entity.Instance = fixture.srv.entities[ids[index]]
 		if instance.IsDroppedItem() && instance.Item.ID == itemID && instance.Item.Meta == meta {
 			total += int(instance.Item.Count)
 		}

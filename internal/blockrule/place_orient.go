@@ -76,7 +76,7 @@ func facingMeta(direction Direction) byte {
 // torchPlacementMeta 火把的 meta 表示它朝哪边倾斜：点哪个面，就贴在被点击方块的那个面上，
 // 1 朝东、2 朝西、3 朝南、4 朝北，5 是立在方块顶上。点击的是不透明方块的侧面或顶面时按这个表放；
 // 否则只有脚下是不透明方块（或围栏、石墙、红石灯这几种特例）才能立着放，立着放的 meta 是 0。
-func torchPlacementMeta(view View, req PlaceRequest, at Pos, targetID byte) (byte, bool) {
+func torchPlacementMeta(view View, req PlaceRequest, spot Pos, targetID byte) (byte, bool) {
 	if !IsTransparent(targetID) && req.Face != FaceDown {
 		switch req.Face {
 		case FaceUp:
@@ -91,7 +91,7 @@ func torchPlacementMeta(view View, req PlaceRequest, at Pos, targetID byte) (byt
 			return 1, true
 		}
 	}
-	var belowID, _ = view.Block(at.Add(0, -1, 0))
+	var belowID, _ = view.Block(spot.Add(0, -1, 0))
 	if !IsTransparent(belowID) {
 		return 0, true
 	}

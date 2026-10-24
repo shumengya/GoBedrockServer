@@ -32,10 +32,10 @@ func isCrop(id byte) bool {
 	return false
 }
 
-// supportedAt 判断 id 这种方块能不能放在 at 这一格，条件照参考端各方块的 place。
+// supportedAt 判断 id 这种方块能不能放在 spot 这一格，条件照参考端各方块的 place。
 // 没有特殊要求的方块一律返回 true。
-func supportedAt(view View, id byte, at Pos) bool {
-	var belowPos Pos = at.Add(0, -1, 0)
+func supportedAt(view View, id byte, spot Pos) bool {
+	var belowPos Pos = spot.Add(0, -1, 0)
 	var belowID, _ = view.Block(belowPos)
 	switch id {
 	case BlockDandelion, BlockPoppy:
@@ -51,7 +51,7 @@ func supportedAt(view View, id byte, at Pos) bool {
 	case BlockSugarcane:
 		return sugarcaneSupported(view, belowPos, belowID)
 	case BlockCactus:
-		return cactusSupported(view, at, belowID)
+		return cactusSupported(view, spot, belowID)
 	}
 	if isCrop(id) {
 		return belowID == BlockFarmland
@@ -78,18 +78,18 @@ func sugarcaneSupported(view View, belowPos Pos, belowID byte) bool {
 }
 
 // cactusSupported 仙人掌立在沙子或仙人掌上，四周四格都不能是实心方块。
-func cactusSupported(view View, at Pos, belowID byte) bool {
+func cactusSupported(view View, spot Pos, belowID byte) bool {
 	if belowID != BlockSand && belowID != BlockCactus {
 		return false
 	}
-	return !solidAround(view, at)
+	return !solidAround(view, spot)
 }
 
 // solidAround 四个水平邻居里有没有实心方块。
-func solidAround(view View, at Pos) bool {
+func solidAround(view View, spot Pos) bool {
 	var face int32 = 0
 	for face = FaceNorth; face <= FaceEast; face++ {
-		var side, _ = at.Side(face)
+		var side, _ = spot.Side(face)
 		if IsSolid(IDAt(view, side)) {
 			return true
 		}

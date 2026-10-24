@@ -208,7 +208,7 @@ func TestPlaceSameCellOnlyOnce(test *testing.T) {
 	placeTestPut(test, fixture, 3, 63, 0, blockrule.BlockStone, 0)
 	var firstHeld protocol.Item = placeTestHold(first, 1, 0, 64)
 	var secondHeld protocol.Item = placeTestHold(second, 1, 0, 64)
-	var group sync.WaitGroup
+	var group sync.WaitGroup = sync.WaitGroup{}
 	group.Go(func() {
 		placeTestUse(fixture, first, 3, 63, 0, blockrule.FaceUp, 1, firstHeld)
 	})

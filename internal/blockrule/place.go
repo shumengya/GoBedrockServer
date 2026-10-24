@@ -48,21 +48,21 @@ func Place(view View, req PlaceRequest) ([]Change, bool) {
 		return nil, false
 	}
 	// 被点击的方块本身能顶替（高草、水、能合并的半砖）就放在它那格，否则放到它旁边那格。
-	var at Pos = req.Target
+	var spot Pos = req.Target
 	if !canBePlacedAt(hand, handMeta, targetID, targetMeta, req, true) {
-		at = side
+		spot = side
 		var sideID, sideMeta = view.Block(side)
 		if !canBePlacedAt(hand, handMeta, sideID, sideMeta, req, false) {
 			return nil, false
 		}
 	}
 	if isSlab(hand) {
-		return placeSlab(view, req, hand, handMeta, at, targetID, targetMeta)
+		return placeSlab(view, req, hand, handMeta, spot, targetID, targetMeta)
 	}
 	if isMultiCell(hand) {
-		return placeMulti(view, req, hand, handMeta, at)
+		return placeMulti(view, req, hand, handMeta, spot)
 	}
-	if !supportedAt(view, hand, at) {
+	if !supportedAt(view, hand, spot) {
 		return nil, false
 	}
 	var meta byte = handMeta
@@ -76,13 +76,13 @@ func Place(view View, req PlaceRequest) ([]Change, bool) {
 		meta = facingMeta(DirectionFromYaw(req.Yaw))
 	}
 	if hand == BlockTorch {
-		var torch, torchOK = torchPlacementMeta(view, req, at, targetID)
+		var torch, torchOK = torchPlacementMeta(view, req, spot, targetID)
 		if !torchOK {
 			return nil, false
 		}
 		meta = torch
 	}
-	return []Change{{Pos: at, ID: hand, Meta: meta}}, true
+	return []Change{{Pos: spot, ID: hand, Meta: meta}}, true
 }
 
 // canBePlacedAt 对应参考端 Block::canBePlacedAt：这一格能不能放下手里的方块。
