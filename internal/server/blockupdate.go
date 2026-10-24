@@ -111,6 +111,9 @@ func (srv *Server) applyChangeLocked(worldName string, blockWorld *world.World, 
 		}
 	}
 	srv.broadcastBlock(worldName, posX, posY, posZ, uint32(edit.ID), uint32(edit.Meta))
+	if edit.Fall {
+		srv.spawnFallingBlock(worldName, edit.Pos, oldID, oldMeta)
+	}
 	return true
 }
 

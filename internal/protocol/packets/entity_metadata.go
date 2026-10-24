@@ -5,6 +5,7 @@ import "go-mc-server/internal/protocol"
 // Metadata keys / types from Entity.php (MCPE 1.1).
 const (
 	EntityDataFlags      = 0
+	EntityDataVariant    = 2
 	EntityDataNametag    = 4
 	EntityDataAir        = 7
 	EntityDataLeadHolder = 38

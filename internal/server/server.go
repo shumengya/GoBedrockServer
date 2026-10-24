@@ -181,6 +181,7 @@ func (srv *Server) tickLoop() {
 		case <-ticker.C:
 			srv.tickDroppedItems()
 			srv.tickScheduled()
+			srv.tickFallingBlocks()
 			srv.tickDayNight()
 			srv.tickChunkSend()
 			srv.tickLife()
@@ -959,7 +960,7 @@ func addEntityPacket(e *entity.Instance) *packets.AddEntityPacket {
 		Z:               e.Z,
 		Yaw:             e.Yaw,
 		Pitch:           e.Pitch,
-		Metadata:        packets.DefaultEntityMetadata(),
+		Metadata:        entityMetadata(e),
 	}
 }
 

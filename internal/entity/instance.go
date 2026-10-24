@@ -21,6 +21,10 @@ type Instance struct {
 	OnGround               bool
 	ClientFrozen           bool
 	WorldName              string
+
+	// BlockID、BlockData 是下落中的方块（沙子、沙砾）自带的方块类型，BlockID 为 0 表示不是下落方块。
+	BlockID   byte
+	BlockData byte
 }
 
 func (e *Instance) IsDroppedItem() bool {

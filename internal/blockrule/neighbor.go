@@ -8,6 +8,9 @@ func OnNeighborChange(view View, pos Pos) []Change {
 		return nil
 	}
 	var id, meta = view.Block(pos)
+	if isFallable(id) {
+		return fallChange(view, pos)
+	}
 	var broken bool = false
 	switch id {
 	case BlockTorch:
