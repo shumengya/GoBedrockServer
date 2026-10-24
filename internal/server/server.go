@@ -10,6 +10,7 @@ import (
 
 	"go-mc-server/config"
 	"go-mc-server/internal/access"
+	"go-mc-server/internal/blockrule"
 	"go-mc-server/internal/command"
 	"go-mc-server/internal/entity"
 	"go-mc-server/internal/item"
@@ -35,6 +36,11 @@ type Server struct {
 	entityIDCounter int64
 
 	visMu sync.Mutex // 串行化玩家互相显示/隐藏
+
+	// blockMu 保护"读方块再改方块"的整段流程：放置、破坏，以及之后的邻居更新和 tick。
+	// 没有它，两个玩家同时往同一格放方块会都通过"落点是空气"的检查。
+	// 加锁顺序：blockMu 最先拿，里面再拿 mu、玩家锁、世界锁；反过来会死锁。
+	blockMu sync.Mutex
 
 	stopCh   chan struct{}
 	stopOnce sync.Once
@@ -599,7 +605,6 @@ func (srv *Server) handleUseItem(sess *network.Session, pkt *packets.UseItemPack
 		return
 	}
 	var blockWorld *world.World = srv.playerWorld(player)
-	var worldName string = srv.playerWorldName(player)
 	var posX, posY, posZ = player.Position()
 
 	// 点击的方块本身要在交互距离内，否则隔着半张地图也能开箱子。
@@ -621,8 +626,14 @@ func (srv *Server) handleUseItem(sess *network.Session, pkt *packets.UseItemPack
 
 	// 手持物一律以服务端记录为准，不信客户端包里的物品栏槽位。
 	var held protocol.Item = player.heldSnapshot()
-	if held.IsAir() || held.ID > 255 {
-		logger.Debug("server", "%s 放置忽略: 空手或非方块 id=%d", sess.Username, held.ID)
+	if held.IsAir() {
+		logger.Debug("server", "%s 放置忽略: 空手", sess.Username)
+		return
+	}
+	// 工具、食物这类不是放方块用的物品直接忽略；种子、门这类要查表的交给放置规则。
+	var _, isBlockItem = blockrule.BlockForItem(held.ID)
+	if !isBlockItem {
+		logger.Debug("server", "%s 放置忽略: 非方块物品 id=%d", sess.Username, held.ID)
 		return
 	}
 	// 客户端报的物品必须和服务端手里的对得上，否则就是自己改了包。
@@ -640,72 +651,7 @@ func (srv *Server) handleUseItem(sess *network.Session, pkt *packets.UseItemPack
 		)
 		return
 	}
-	var placeX, placeY, placeZ, offsetOK = world.OffsetByFace(pkt.X, pkt.Y, pkt.Z, pkt.Face)
-	if !offsetOK {
-		return
-	}
-	if blockIDAt(blockWorld, placeX, placeY, placeZ) != world.BlockAir {
-		logger.Debug("server", "%s 放置忽略: (%d,%d,%d) 不是空气", sess.Username, placeX, placeY, placeZ)
-		return
-	}
-
-	// 放置位置也要在距离内。
-	var placePos blockPos = blockPos{PosX: placeX, PosY: placeY, PosZ: placeZ}
-	if !blockInReach(posX, posY, posZ, placePos, srv.placeDistance(player)) {
-		logger.Debug("server", "%s 放置被拒: (%d,%d,%d) 距离过远", sess.Username, placeX, placeY, placeZ)
-		srv.notifyBlocked(player, "§c目标方块太远，够不着")
-		// 客户端已经本地放上去了，推回原状。
-		srv.broadcastBlock(worldName, placeX, placeY, placeZ, 0, 0)
-		return
-	}
-
-	// 出生点保护：半径由配置的 spawn-protection 决定。
-	if srv.spawnProtected(player, placeX, placeZ) {
-		logger.Debug("server", "%s 放置被拒: (%d,%d,%d) 在出生点保护范围内", sess.Username, placeX, placeY, placeZ)
-		srv.notifyBlocked(player, "§c这里在出生点保护范围内，不能放置方块")
-		srv.broadcastBlock(worldName, placeX, placeY, placeZ, 0, 0)
-		return
-	}
-
-	// 背包里必须真有这个方块，创造模式跳过。
-	if !player.HasItem(held, 1) {
-		logger.Debug("server", "%s 放置被拒: 背包里没有 %d:%d", sess.Username, held.ID, held.Meta)
-		srv.notifyBlocked(player, fmt.Sprintf("§c背包里没有 %d:%d，放不了", held.ID, held.Meta))
-		srv.broadcastBlock(worldName, placeX, placeY, placeZ, 0, 0)
-		return
-	}
-
-	if IsBodyColumn(posX, posY, posZ, placeX, placeY, placeZ) {
-		logger.Info(
-			"server",
-			"%s 放置拒绝: (%d,%d,%d) 是脚底/头/下一格 pos=(%.2f,%.2f,%.2f)",
-			sess.Username,
-			placeX,
-			placeY,
-			placeZ,
-			posX,
-			posY,
-			posZ,
-		)
-		srv.broadcastBlock(worldName, placeX, placeY, placeZ, 0, 0)
-		return
-	}
-
-	if !blockWorld.SetBlock(placeX, placeY, placeZ, byte(held.ID), byte(held.Meta&0x0f)) {
-		logger.Debug("server", "%s 放置失败 (%d,%d,%d)", sess.Username, placeX, placeY, placeZ)
-		return
-	}
-	logger.Info("server", "%s 放置方块 id=%d 于 (%d,%d,%d)", sess.Username, held.ID, placeX, placeY, placeZ)
-	srv.broadcastBlock(worldName, placeX, placeY, placeZ, uint32(held.ID), uint32(held.Meta&0x0f))
-	srv.onBlockPlaced(player, placeX, placeY, placeZ, byte(held.ID))
-	var slot, remaining, changed = player.ConsumeHeld(1)
-	if changed {
-		srv.sendInventorySlot(player, slot, remaining)
-		// 最后一个方块放完手变空，别人那边也要同步
-		if remaining.IsAir() {
-			srv.broadcastHeldItem(player)
-		}
-	}
+	srv.placeHeldBlock(player, pkt, held)
 }
 
 func (srv *Server) placeDistance(player *Player) float32 {

@@ -197,6 +197,9 @@ func (srv *Server) handleRemoveBlock(sess *network.Session, pkt *packets.RemoveB
 	if player == nil || sess.State() != network.StatePlaying || player.IsDead() {
 		return
 	}
+	// 破坏和放置共用一把锁，免得一边挖一边有人往同一格放。
+	srv.blockMu.Lock()
+	defer srv.blockMu.Unlock()
 	var blockWorld *world.World = srv.playerWorld(player)
 	var worldName string = srv.playerWorldName(player)
 	var blockID, blockMeta = blockWorld.GetBlock(pkt.X, pkt.Y, pkt.Z)
