@@ -54,6 +54,7 @@ type Session struct {
 	OnEntityFall        func(s *Session, pkt *packets.EntityFallPacket)
 	OnEntityEvent       func(s *Session, pkt *packets.EntityEventPacket)
 	OnCraftingEvent     func(s *Session, pkt *packets.CraftingEventPacket)
+	OnBlockEntityData   func(s *Session, pkt *packets.BlockEntityDataPacket)
 
 	// MaxChunkRadius 是客户端视距请求的上限，来自 server.properties 的 view-distance。
 	// 0 表示没配置，按 defaultMaxChunkRadius 处理。

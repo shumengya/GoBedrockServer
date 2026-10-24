@@ -28,6 +28,10 @@ func OnNeighborChange(view View, pos Pos) []Change {
 		broken = attachedBroken(view, pos, leverSupportFace(meta))
 	case BlockStoneButton, BlockWoodButton:
 		broken = buttonBroken(view, pos, meta)
+	case BlockSignPost:
+		broken = signPostBroken(view, pos)
+	case BlockWallSign:
+		broken = wallSignBroken(view, pos, meta)
 	}
 	if isCrop(id) {
 		broken = cropBroken(view, pos)

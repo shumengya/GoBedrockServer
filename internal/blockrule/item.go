@@ -58,6 +58,8 @@ func BlockForItem(itemID int32) (byte, bool) {
 		return BlockDarkOakDoor, true
 	case itemBed:
 		return BlockBed, true
+	case itemSign:
+		return BlockSignPost, true
 	}
 	return BlockAir, false
 }

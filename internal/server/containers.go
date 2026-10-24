@@ -22,6 +22,10 @@ func (srv *Server) onBlockPlaced(p *Player, x, y, z int32, id byte, color byte) 
 		t := world.NewBedTile(x, y, z, color)
 		w.SetTile(t)
 		srv.broadcastTile(wn, t)
+	case world.BlockSignPost, world.BlockWallSign:
+		t := world.NewSignTile(x, y, z, p.UUID)
+		w.SetTile(t)
+		srv.broadcastTile(wn, t)
 	default:
 		w.RemoveTile(x, y, z)
 	}

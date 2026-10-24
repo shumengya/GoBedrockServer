@@ -34,8 +34,9 @@ type Tile struct {
 	PairX  int32
 	PairZ  int32
 
-	// 告示牌的四行字。
-	Lines [4]string
+	// 告示牌的四行字，以及还有权写字的玩家 UUID：放下牌子的人可以写一次，写完清空，不存盘，重启后也清空。
+	Lines  [4]string
+	Editor string
 }
 
 func tileKey(x, y, z int32) string {

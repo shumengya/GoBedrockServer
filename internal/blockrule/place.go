@@ -64,6 +64,9 @@ func Place(view View, req PlaceRequest) ([]Change, bool) {
 	if isMultiCell(hand) {
 		return placeMulti(view, req, hand, handMeta, spot)
 	}
+	if isSign(hand) {
+		return placeSign(view, req, spot)
+	}
 	if !supportedAt(view, hand, spot) {
 		return nil, false
 	}

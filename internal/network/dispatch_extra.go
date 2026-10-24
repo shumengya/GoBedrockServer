@@ -20,5 +20,12 @@ func (s *Session) dispatchExtra(pkt packets.Packet) bool {
 		}
 		return true
 	}
+	var entityDataPkt, isEntityData = pkt.(*packets.BlockEntityDataPacket)
+	if isEntityData {
+		if s.OnBlockEntityData != nil {
+			s.OnBlockEntityData(s, entityDataPkt)
+		}
+		return true
+	}
 	return false
 }

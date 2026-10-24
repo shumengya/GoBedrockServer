@@ -409,6 +409,9 @@ func (srv *Server) onNewRakSession(rakSess *raknet.Session) {
 	sess.OnCraftingEvent = func(session *network.Session, pkt *packets.CraftingEventPacket) {
 		srv.handleCraftingEvent(session, pkt)
 	}
+	sess.OnBlockEntityData = func(session *network.Session, pkt *packets.BlockEntityDataPacket) {
+		srv.handleBlockEntityData(session, pkt)
+	}
 }
 
 func (srv *Server) handleSessionLogin(sess *network.Session) {
