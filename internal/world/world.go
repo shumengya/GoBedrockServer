@@ -138,6 +138,24 @@ func (w *World) GetBlock(x, y, z int32) (id, data byte) {
 	return w.chunk(cx, cz).GetBlock(lx, int(y), lz)
 }
 
+// Peek 只读已经在内存里的区块：区块没加载就返回 loaded=false，不会触发生成或读盘。
+// 邻居更新、随机刻靠它判断边界，免得一次放方块把相邻的整片空区块都生成出来。
+// 超出 0~255 高度的位置按已加载的空气处理，这样世界顶底的支撑判断才有确定结果。
+func (w *World) Peek(posX int32, posY int32, posZ int32) (id byte, data byte, loaded bool) {
+	if posY < 0 || posY > 255 {
+		return BlockAir, 0, true
+	}
+	var key uint64 = chunkKey(posX>>4, posZ>>4)
+	w.mu.RLock()
+	var column *Chunk = w.chunks[key]
+	w.mu.RUnlock()
+	if column == nil {
+		return BlockAir, 0, false
+	}
+	var blockID, blockData = column.GetBlock(int(posX&15), int(posY), int(posZ&15))
+	return blockID, blockData, true
+}
+
 // BlockID 只取方块 id，忽略 data。判定用不上元数据时用它，省得每次接两个返回值。
 func (w *World) BlockID(posX int32, posY int32, posZ int32) byte {
 	var id, data = w.GetBlock(posX, posY, posZ)
