@@ -29,10 +29,10 @@ type Change struct {
 // Place 照参考端 Level::useItemOn 的放置流程，算出这次放置要改哪些格子。
 // 它只读 view，不改世界；返回 false 表示这次放不了。
 //
-// 门、床、双层植物占两格，放置规则在多格方块的提交里做，这里先一律返回 false。
+// 门、床、双层植物占两格，走 placeMulti。
 func Place(view View, req PlaceRequest) ([]Change, bool) {
 	var hand, isBlock = BlockForItem(req.ItemID)
-	if !isBlock || isMultiCell(hand) {
+	if !isBlock {
 		return nil, false
 	}
 	var handMeta byte = byte(req.ItemMeta) & 15
@@ -58,6 +58,9 @@ func Place(view View, req PlaceRequest) ([]Change, bool) {
 	}
 	if isSlab(hand) {
 		return placeSlab(view, req, hand, handMeta, at, targetID, targetMeta)
+	}
+	if isMultiCell(hand) {
+		return placeMulti(view, req, hand, handMeta, at)
 	}
 	if !supportedAt(view, hand, at) {
 		return nil, false

@@ -71,11 +71,15 @@ func (srv *Server) applyChangeLocked(worldName string, blockWorld *world.World, 
 	if !blockWorld.SetBlock(posX, posY, posZ, edit.ID, edit.Meta) {
 		return false
 	}
+	var bedTile world.Tile
+	var isBed bool = false
 	if edit.ID == blockrule.BlockAir {
 		var tile, hasTile = blockWorld.RemoveTile(posX, posY, posZ)
 		if hasTile && tile.ID == world.TileChest {
 			srv.dropChestContents(worldName, tile)
 		}
+		bedTile = tile
+		isBed = hasTile && tile.ID == world.TileBed
 	}
 	if edit.Drop {
 		srv.broadcastLevelEvent(
@@ -88,6 +92,9 @@ func (srv *Server) applyChangeLocked(worldName string, blockWorld *world.World, 
 		)
 		// 自己掉下来的方块按空手结算掉落，不受任何玩家手持工具影响。
 		var drops []protocol.Item = blockDrops(oldID, oldMeta, protocol.Air(), defaultDropRandom{})
+		if isBed {
+			drops = withBedColor(drops, bedTile.Color)
+		}
 		var dropIndex int = 0
 		for dropIndex = 0; dropIndex < len(drops); dropIndex++ {
 			srv.spawnDroppedItem(
@@ -105,4 +112,46 @@ func (srv *Server) applyChangeLocked(worldName string, blockWorld *world.World, 
 	}
 	srv.broadcastBlock(worldName, posX, posY, posZ, uint32(edit.ID), uint32(edit.Meta))
 	return true
+}
+
+// bedItemID 是床的物品 ID。床的颜色在物品 meta 里，方块 meta 里没有，
+// 所以掉落物的颜色要从方块实体里取，不能用 blockDrops 里写死的红色。
+const bedItemID int32 = 355
+
+// withBedColor 把掉落里的床换成方块实体记着的颜色。
+func withBedColor(drops []protocol.Item, color byte) []protocol.Item {
+	var index int = 0
+	for index = 0; index < len(drops); index++ {
+		if drops[index].ID == bedItemID {
+			drops[index].Meta = int32(color)
+		}
+	}
+	return drops
+}
+
+// removePartnerLocked 玩家挖掉两格方块（门、床、双层植物）的一半时，另一半跟着一起拆掉。
+// 返回另一半按玩家手持物算出的掉落，由调用方决定要不要真的生成（创造模式不生成）。
+// 门的下半、床头、双层植物的上半才会有掉落，所以不管先挖哪一半，一共只掉一个。
+func (srv *Server) removePartnerLocked(
+	worldName string,
+	blockWorld *world.World,
+	partner blockrule.Pos,
+	held protocol.Item,
+) []protocol.Item {
+	var oldID, oldMeta = blockWorld.GetBlock(partner.PosX, partner.PosY, partner.PosZ)
+	var tile, hasTile = blockWorld.TileAt(partner.PosX, partner.PosY, partner.PosZ)
+	srv.broadcastLevelEvent(
+		worldName,
+		packets.LevelEventParticleDestroy,
+		float32(partner.PosX),
+		float32(partner.PosY),
+		float32(partner.PosZ),
+		int32(oldID)|int32(oldMeta)<<8,
+	)
+	srv.applyChangeLocked(worldName, blockWorld, blockrule.Change{Pos: partner, ID: blockrule.BlockAir, Meta: 0})
+	var drops []protocol.Item = blockDrops(oldID, oldMeta, held, defaultDropRandom{})
+	if hasTile && tile.ID == world.TileBed {
+		drops = withBedColor(drops, tile.Color)
+	}
+	return drops
 }

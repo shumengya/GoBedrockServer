@@ -22,6 +22,9 @@ func OnNeighborChange(view View, pos Pos) []Change {
 	if isCrop(id) {
 		broken = cropBroken(view, pos)
 	}
+	if isMultiCell(id) {
+		broken = pairBroken(view, pos, id, meta)
+	}
 	if !broken {
 		return nil
 	}

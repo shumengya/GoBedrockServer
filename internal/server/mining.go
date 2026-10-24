@@ -239,6 +239,11 @@ func (srv *Server) handleRemoveBlock(sess *network.Session, pkt *packets.RemoveB
 	player.stopMining()
 	// 先取手持物再改方块：耐久和掉落都按挖掉这一刻的工具算
 	var held protocol.Item = player.heldSnapshot()
+	// 门、床、双层植物要把另一半一起拆掉，得在这一格变成空气之前取，之后就查不到了。
+	var partner, hasPartner = blockrule.PairedHalf(
+		loadingView{target: blockWorld},
+		blockrule.Pos{PosX: pkt.X, PosY: pkt.Y, PosZ: pkt.Z},
+	)
 	if !blockWorld.SetBlock(pkt.X, pkt.Y, pkt.Z, world.BlockAir, 0) {
 		return
 	}
@@ -256,13 +261,23 @@ func (srv *Server) handleRemoveBlock(sess *network.Session, pkt *packets.RemoveB
 		int32(blockID)|int32(blockMeta)<<8,
 	)
 	srv.broadcastBlock(worldName, pkt.X, pkt.Y, pkt.Z, 0, 0)
+	var origins []blockrule.Pos = []blockrule.Pos{{PosX: pkt.X, PosY: pkt.Y, PosZ: pkt.Z}}
+	var partnerDrops []protocol.Item = nil
+	if hasPartner {
+		partnerDrops = srv.removePartnerLocked(worldName, blockWorld, partner, held)
+		origins = append(origins, partner)
+	}
 	// 挖掉一个方块，贴着它的火把、立在它上面的花都要重新评估；创造模式也一样。
-	srv.settleBlocksLocked(worldName, blockWorld, []blockrule.Pos{{PosX: pkt.X, PosY: pkt.Y, PosZ: pkt.Z}})
+	srv.settleBlocksLocked(worldName, blockWorld, origins)
 	if gameMode == int32(protocol.GameModeCreative) {
 		return
 	}
 	srv.exhaustPlayer(player, exhaustMining)
 	var drops []protocol.Item = blockDrops(blockID, blockMeta, held, defaultDropRandom{})
+	if hasTile && tile.ID == world.TileBed {
+		drops = withBedColor(drops, tile.Color)
+	}
+	drops = append(drops, partnerDrops...)
 	var index int = 0
 	for index = 0; index < len(drops); index++ {
 		srv.spawnDroppedItem(

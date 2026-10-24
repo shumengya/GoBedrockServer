@@ -7,7 +7,8 @@ import (
 	"go-mc-server/internal/world"
 )
 
-func (srv *Server) onBlockPlaced(p *Player, x, y, z int32, id byte) {
+// onBlockPlaced 方块放下后补上它的方块实体。color 是手持物的 meta 低 4 位，只有床用它当颜色。
+func (srv *Server) onBlockPlaced(p *Player, x, y, z int32, id byte, color byte) {
 	w := srv.playerWorld(p)
 	wn := srv.playerWorldName(p)
 	switch id {
@@ -16,7 +17,7 @@ func (srv *Server) onBlockPlaced(p *Player, x, y, z int32, id byte) {
 		w.SetTile(t)
 		srv.broadcastTile(wn, t)
 	case world.BlockBed:
-		t := world.NewBedTile(x, y, z, world.BedDefaultColor)
+		t := world.NewBedTile(x, y, z, color)
 		w.SetTile(t)
 		srv.broadcastTile(wn, t)
 	default:

@@ -9,10 +9,9 @@ import (
 )
 
 const (
-	TileChest       = nbt.IDChest
-	TileBed         = nbt.IDBed
-	ChestSize       = protocol.ChestSize
-	BedDefaultColor = 14
+	TileChest = nbt.IDChest
+	TileBed   = nbt.IDBed
+	ChestSize = protocol.ChestSize
 )
 
 // Tile is a block entity (chest inventory / bed color). Workbenches have no tile.
@@ -50,11 +49,8 @@ func NewBedTile(x, y, z int32, color byte) Tile {
 func (t Tile) SpawnNBT() []byte {
 	switch t.ID {
 	case TileBed:
-		color := t.Color
-		if color == 0 {
-			color = BedDefaultColor
-		}
-		return nbt.SpawnBed(t.X, t.Y, t.Z, color)
+		// 颜色 0 是白色，是合法颜色，不能当成没设置而换成红色。
+		return nbt.SpawnBed(t.X, t.Y, t.Z, t.Color)
 	default:
 		return nbt.SpawnChest(t.X, t.Y, t.Z)
 	}

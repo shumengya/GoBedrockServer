@@ -45,3 +45,15 @@ func TestChestSlotRoundtrip(t *testing.T) {
 		t.Fatal("tile should be gone")
 	}
 }
+
+// 颜色 0 是白色，是合法颜色，发给客户端时不能当成"没设置"换成红色。
+func TestBedTileKeepsWhiteColor(t *testing.T) {
+	white := NewBedTile(1, 64, 2, 0)
+	if !bytes.Equal(white.SpawnNBT(), nbt.SpawnBed(1, 64, 2, 0)) {
+		t.Fatalf("白床的方块实体应带颜色 0: %x", white.SpawnNBT())
+	}
+	red := NewBedTile(1, 64, 2, 14)
+	if bytes.Equal(white.SpawnNBT(), red.SpawnNBT()) {
+		t.Fatal("白床和红床的方块实体不该一样")
+	}
+}

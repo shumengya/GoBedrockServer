@@ -147,24 +147,6 @@ func TestPlaceNeedsSupport(test *testing.T) {
 			Request: request(361, 0, groundPos, blockrule.FaceUp, 1, 0),
 			Expect:  []blockrule.Change{change(abovePos, blockrule.BlockPumpkinStem, 0)},
 		},
-		{
-			Name:    "木门是两格方块，本提交还不处理",
-			View:    groundView(),
-			Request: request(324, 0, groundPos, blockrule.FaceUp, 1, 0),
-			Expect:  nil,
-		},
-		{
-			Name:    "床是两格方块，本提交还不处理",
-			View:    groundView(),
-			Request: request(355, 14, groundPos, blockrule.FaceUp, 1, 0),
-			Expect:  nil,
-		},
-		{
-			Name:    "双层植物是两格方块，本提交还不处理",
-			View:    newMapView().set(groundPos, blockrule.BlockGrass, 0),
-			Request: request(175, 0, groundPos, blockrule.FaceUp, 1, 0),
-			Expect:  nil,
-		},
 	}
 	runPlaceCases(test, more)
 }

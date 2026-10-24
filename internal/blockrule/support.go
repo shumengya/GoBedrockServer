@@ -4,12 +4,10 @@ func isWater(id byte) bool {
 	return id == BlockFlowingWater || id == BlockStillWater
 }
 
-// isMultiCell 占两格的方块：门、床、双层植物。
-func isMultiCell(id byte) bool {
+// isDoor 各种木门和铁门。
+func isDoor(id byte) bool {
 	switch id {
-	case BlockBed,
-		BlockDoublePlant,
-		BlockWoodDoor,
+	case BlockWoodDoor,
 		BlockIronDoor,
 		BlockSpruceDoor,
 		BlockBirchDoor,
@@ -19,6 +17,11 @@ func isMultiCell(id byte) bool {
 		return true
 	}
 	return false
+}
+
+// isMultiCell 占两格的方块：门、床、双层植物。
+func isMultiCell(id byte) bool {
+	return isDoor(id) || id == BlockBed || id == BlockDoublePlant
 }
 
 func isCrop(id byte) bool {

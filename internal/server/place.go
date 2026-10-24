@@ -72,7 +72,7 @@ func (srv *Server) placeHeldBlock(player *Player, pkt *packets.UseItemPacket, he
 			cell.PosZ,
 		)
 		srv.broadcastBlock(worldName, cell.PosX, cell.PosY, cell.PosZ, uint32(edit.ID), uint32(edit.Meta))
-		srv.onBlockPlaced(player, cell.PosX, cell.PosY, cell.PosZ, edit.ID)
+		srv.onBlockPlaced(player, cell.PosX, cell.PosY, cell.PosZ, edit.ID, byte(held.Meta&15))
 	}
 	var origins []blockrule.Pos = make([]blockrule.Pos, 0, len(changes))
 	for index = 0; index < len(changes); index++ {
