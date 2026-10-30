@@ -65,6 +65,9 @@ type Server struct {
 	// timeTicker 是昼夜同步用的计数器，只在 tick 协程里读写。
 	timeTicker int
 
+	// chunkSweepBusy 后台卸载区块正在跑，防止上一次没扫完又开一次。零值可用。
+	chunkSweepBusy atomic.Bool
+
 	// 合成配方包全服共用一份，首次需要时编码。
 	craftOnce sync.Once
 	craftRaw  []byte
@@ -173,6 +176,8 @@ func (srv *Server) tickLoop() {
 	defer worldAuto.Stop()
 	playerAuto := time.NewTicker(time.Duration(srv.cfg.PlayerSaveSeconds) * time.Second)
 	defer playerAuto.Stop()
+	sweepAuto := time.NewTicker(chunkSweepInterval)
+	defer sweepAuto.Stop()
 	var coordsTick int = 0
 	for {
 		select {
@@ -196,6 +201,8 @@ func (srv *Server) tickLoop() {
 			srv.saveWorld("autosave")
 		case <-playerAuto.C:
 			srv.savePlayers("player-autosave")
+		case <-sweepAuto.C:
+			srv.startChunkSweep()
 		}
 	}
 }
@@ -1129,7 +1136,12 @@ func (srv *Server) itemSolidIn(worldName string, x, y, z float32) bool {
 		return false
 	}
 	w := srv.worldByName(worldName)
-	id, _ := w.GetBlock(int32(math.Floor(float64(x))), by, int32(math.Floor(float64(z))))
+	// 只看已经在内存里的区块，不能因为一个掉落物把没人去的区块读盘或生成出来（那样卸载就白做了）。
+	// 区块没加载就当实心：东西停在原地等区块回来，不会掉进虚空。
+	var id, _, loaded = w.Peek(int32(math.Floor(float64(x))), by, int32(math.Floor(float64(z))))
+	if !loaded {
+		return true
+	}
 	switch id {
 	case world.BlockAir, 8, 9, 10, 11: // air, water, lava
 		return false
