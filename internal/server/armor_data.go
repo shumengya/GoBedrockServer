@@ -20,14 +20,15 @@ type armorInfo struct {
 	MaxDurability int32
 }
 
-// armorTable 数值取自参考端 item/*.php 的 getArmorValue 和 getMaxDurability。
+// armorTable 数值取自参考端 item/*.php 的 getArmorValue 和 getMaxDurability，
+// 只有锁链头盔和金头盔例外：参考端写的是 1 点，确认原版两个版本都是 2 点，这里按 2 点。
 // 鞘翅占胸甲槽，没有护甲点数。
 var armorTable map[int32]armorInfo = map[int32]armorInfo{
 	298: {Slot: armorSlotHelmet, Defense: 1, MaxDurability: 56},      // 皮革帽子
 	299: {Slot: armorSlotChestplate, Defense: 3, MaxDurability: 81},  // 皮革外套
 	300: {Slot: armorSlotLeggings, Defense: 2, MaxDurability: 76},    // 皮革裤子
 	301: {Slot: armorSlotBoots, Defense: 1, MaxDurability: 66},       // 皮革靴子
-	302: {Slot: armorSlotHelmet, Defense: 1, MaxDurability: 166},     // 锁链头盔
+	302: {Slot: armorSlotHelmet, Defense: 2, MaxDurability: 166},     // 锁链头盔
 	303: {Slot: armorSlotChestplate, Defense: 5, MaxDurability: 241}, // 锁链胸甲
 	304: {Slot: armorSlotLeggings, Defense: 4, MaxDurability: 226},   // 锁链护腿
 	305: {Slot: armorSlotBoots, Defense: 1, MaxDurability: 196},      // 锁链靴子
@@ -39,7 +40,7 @@ var armorTable map[int32]armorInfo = map[int32]armorInfo{
 	311: {Slot: armorSlotChestplate, Defense: 8, MaxDurability: 529}, // 钻石胸甲
 	312: {Slot: armorSlotLeggings, Defense: 6, MaxDurability: 496},   // 钻石护腿
 	313: {Slot: armorSlotBoots, Defense: 3, MaxDurability: 430},      // 钻石靴子
-	314: {Slot: armorSlotHelmet, Defense: 1, MaxDurability: 78},      // 金头盔
+	314: {Slot: armorSlotHelmet, Defense: 2, MaxDurability: 78},      // 金头盔
 	315: {Slot: armorSlotChestplate, Defense: 5, MaxDurability: 113}, // 金胸甲
 	316: {Slot: armorSlotLeggings, Defense: 3, MaxDurability: 106},   // 金护腿
 	317: {Slot: armorSlotBoots, Defense: 1, MaxDurability: 92},       // 金靴子

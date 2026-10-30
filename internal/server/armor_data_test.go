@@ -47,8 +47,8 @@ type armorSetCase struct {
 }
 
 // 盔甲表：21 件，物品号 298~317 每四件一套，顺序都是头盔、胸甲、护腿、靴子，所以槽位 = (号 - 298) % 4。
-// 整套的护甲点数照参考端：皮革 7，锁链 11，铁 15，钻石 20，金 10。
-// 参考端的锁链头盔和金头盔只有 1 点，我印象里原版是 2，没有资料可对照，先按参考端。
+// 整套的护甲点数：皮革 7，锁链 12，铁 15，钻石 20，金 11。
+// 锁链和金这两套按原版的 2 点头盔算，不照参考端写的 1 点。
 func TestArmorTable(test *testing.T) {
 	if len(armorTable) != 21 {
 		test.Fatalf("盔甲表应有 21 件，实际 %d", len(armorTable))
@@ -72,10 +72,10 @@ func TestArmorTable(test *testing.T) {
 	}
 	var sets []armorSetCase = []armorSetCase{
 		{Name: "皮革", First: 298, Points: 7},
-		{Name: "锁链", First: 302, Points: 11},
+		{Name: "锁链", First: 302, Points: 12},
 		{Name: "铁", First: 306, Points: 15},
 		{Name: "钻石", First: 310, Points: 20},
-		{Name: "金", First: 314, Points: 10},
+		{Name: "金", First: 314, Points: 11},
 	}
 	var index int = 0
 	for index = 0; index < len(sets); index++ {
