@@ -29,6 +29,8 @@ type PlayerData struct {
 	HeldSlot  byte       `json:"heldSlot"`
 	// EnderChest 是玩家的末影箱，所有末影箱方块共用这一份。没用过的玩家没有这个字段。
 	EnderChest []SlotData `json:"enderChest,omitempty"`
+	// Armor 身上的盔甲，4 格（头盔、胸甲、护腿、靴子），损耗值存在 meta 里。全空不写。
+	Armor []SlotData `json:"armor,omitempty"`
 	// Food 是饥饿状态。老存档没有这个字段，读出来是 nil，调用方按满饥饿处理，不能当成 0 饿死人。
 	Food *FoodData `json:"food,omitempty"`
 }

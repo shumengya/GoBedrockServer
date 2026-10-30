@@ -64,6 +64,9 @@ type Player struct {
 	// EnderChest 玩家的末影箱，没用过时是 nil，用到时才补满 27 格。受 mu 保护。
 	EnderChest []protocol.Item
 
+	// Armor 身上的盔甲，下标见 armorSlotHelmet 等。零值是全空。受 mu 保护。
+	Armor [protocol.ArmorSize]protocol.Item
+
 	combat combatState
 	food   foodState
 	mining miningState
@@ -177,6 +180,7 @@ func (p *Player) Snapshot(worldName string) storage.PlayerData {
 		Inventory:  storage.SlotsFromItems(p.Inventory),
 		HeldSlot:   p.HeldSlot,
 		EnderChest: enderChestSlots(p.EnderChest),
+		Armor:      armorToSlots(p.Armor),
 		Food:       p.food.save(),
 	}
 }
@@ -216,6 +220,7 @@ func (p *Player) ApplySave(d storage.PlayerData) {
 	if len(d.EnderChest) > 0 {
 		p.EnderChest = storage.ItemsFromSlots(d.EnderChest, protocol.ChestSize)
 	}
+	p.Armor = armorFromSlots(d.Armor)
 	p.food.restore(d.Food)
 }
 
@@ -237,6 +242,10 @@ const maxStackByte = 64
 // stackLimit 工具按耐久区分，必须一格一个，否则一叠镐子共用一个损耗值。
 func stackLimit(item protocol.Item) byte {
 	if toolInfoFor(item).MaxDurability > 0 {
+		return 1
+	}
+	var _, isArmor = armorInfoFor(item)
+	if isArmor {
 		return 1
 	}
 	return maxStackByte
@@ -467,6 +476,14 @@ func (p *Player) takeAllItems() []protocol.Item {
 		}
 		dumped = append(dumped, item)
 		p.Inventory[index] = protocol.Air()
+	}
+	var slot int = 0
+	for slot = 0; slot < len(p.Armor); slot++ {
+		if p.Armor[slot].IsAir() {
+			continue
+		}
+		dumped = append(dumped, p.Armor[slot])
+		p.Armor[slot] = protocol.Air()
 	}
 	p.HeldItem = p.Inventory[p.HeldSlot]
 	return dumped

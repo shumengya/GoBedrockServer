@@ -111,6 +111,13 @@ func (srv *Server) applyDamage(target *Player, amount float32, cause DamageCause
 	if target == nil || amount <= 0 {
 		return false
 	}
+	// 护甲先减伤。减到 0 等于这一下被挡住了：不扣血、不进无敌时间、不击退、不磨损盔甲。
+	if armorReducesDamage(cause) {
+		amount = reduceByArmor(amount, target.armorPoints())
+		if amount <= 0 {
+			return false
+		}
+	}
 	var applied, health, died = target.takeDamage(amount, cause, time.Now(), bypassCooldown)
 	if !applied {
 		return false
@@ -127,6 +134,9 @@ func (srv *Server) applyDamage(target *Player, amount float32, cause DamageCause
 		"",
 	)
 	if !died {
+		if armorWearsOnHit(cause) {
+			srv.wearArmorAfterHit(target)
+		}
 		return true
 	}
 	srv.killPlayer(target, killer, cause)

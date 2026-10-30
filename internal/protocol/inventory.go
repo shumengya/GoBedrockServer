@@ -18,6 +18,9 @@ const (
 
 	ChestSize   = 27
 	FurnaceSize = 3
+
+	// ArmorSize 盔甲槽数：头盔、胸甲、护腿、靴子。
+	ArmorSize = 4
 )
 
 // NetworkPlayerInventory pads 36 server slots to the 45-slot PE payload.

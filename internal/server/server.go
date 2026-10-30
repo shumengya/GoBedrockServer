@@ -587,6 +587,7 @@ func (srv *Server) sendChunksAndSpawn(sess *network.Session, radius int32) {
 		OnGround:        true,
 	})
 	srv.sendPlayerInventory(p)
+	srv.sendOwnArmor(p)
 	srv.sendCreativeInventory(p)
 	sess.SendPacket(&packets.AvailableCommandsPacket{
 		CommandsJSON: srv.cmds.AvailableCommandsJSON(srv.isOp(sess.Username)),
@@ -762,6 +763,10 @@ func (srv *Server) handleContainerSetSlot(sess *network.Session, pkt *packets.Co
 	p := srv.players[sess.ClientUUID]
 	srv.mu.RUnlock()
 	if p == nil {
+		return
+	}
+	if pkt.WindowID == protocol.ContainerArmor {
+		srv.handleArmorSlot(p, pkt)
 		return
 	}
 	if pkt.WindowID == 0 {

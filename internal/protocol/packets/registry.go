@@ -39,6 +39,7 @@ func init() {
 	Register(protocol.IDUpdateBlock, func() Packet { return &UpdateBlockPacket{} })
 	Register(protocol.IDUpdateAttributes, func() Packet { return &UpdateAttributesPacket{} })
 	Register(protocol.IDMobEquipment, func() Packet { return &MobEquipmentPacket{} })
+	Register(protocol.IDMobArmorEquipment, func() Packet { return &MobArmorEquipmentPacket{} })
 	Register(protocol.IDInteract, func() Packet { return &InteractPacket{} })
 	Register(protocol.IDEntityEvent, func() Packet { return &EntityEventPacket{} })
 	Register(protocol.IDSetHealth, func() Packet { return &SetHealthPacket{} })

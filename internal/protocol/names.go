@@ -23,6 +23,7 @@ const (
 	UpdateBlockFlagAll         = UpdateBlockFlagNeighbors | UpdateBlockFlagNetwork
 	UpdateBlockFlagAllPriority = UpdateBlockFlagAll | UpdateBlockFlagPriority
 	ContainerInventory         = 0
+	ContainerArmor             = 0x78 // PocketMine SPECIAL_ARMOR：盔甲槽，4 格，下标 0 头盔 1 胸甲 2 护腿 3 靴子
 	ContainerCreative          = 0x79 // PocketMine SPECIAL_CREATIVE
 )
 

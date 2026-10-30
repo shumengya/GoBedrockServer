@@ -136,6 +136,7 @@ func (srv *Server) showPlayerInWorld(player *Player) {
 	for index = 0; index < len(viewers); index++ {
 		player.Session.SendPacket(addPlayerPacket(viewers[index]))
 	}
+	exchangeArmor(player, viewers)
 	if !announce {
 		return
 	}

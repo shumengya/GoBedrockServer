@@ -187,6 +187,7 @@ func (srv *Server) dropPlayerInventory(victim *Player) {
 		srv.spawnDroppedItem(item, posX, posY, posZ, 0, 0.1, 0, 10, worldName)
 	}
 	victim.SyncInventory()
+	srv.syncArmor(victim)
 }
 
 // respawnPlayer 处理客户端点了“重生”：回出生点、回满血、通知其他玩家。
@@ -219,6 +220,7 @@ func (srv *Server) respawnPlayer(player *Player) {
 		srv.sendVitals(player)
 		srv.sendHealth(player, maxPlayerHealth)
 		srv.sendPlayerInventory(player)
+		srv.sendOwnArmor(player)
 	}
 	srv.broadcastInWorld(
 		srv.playerWorldName(player),
