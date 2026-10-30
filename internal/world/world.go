@@ -1,7 +1,11 @@
 package world
 
 import (
+	"errors"
+	"fmt"
+	"maps"
 	"math"
+	"slices"
 	"sync"
 )
 
@@ -25,6 +29,11 @@ type World struct {
 	mu     sync.RWMutex
 	chunks map[uint64]*Chunk
 	store  ColumnStore
+
+	// persistMu 把「存盘」和「卸载」串起来：卸载是先存盘再从内存移除，
+	// 如果它和另一次存盘交错，区块可能在新数据落盘之前就被重新读回内存，读到旧数据。
+	// 加锁顺序：persistMu → mu → 区块自己的锁。
+	persistMu sync.Mutex
 
 	tileMu     sync.RWMutex
 	tiles      map[string]Tile
@@ -59,65 +68,79 @@ func (w *World) SetStore(s ColumnStore) {
 	w.store = s
 }
 
+// chunk 返回一个区块列，不在内存里就读盘，盘上没有就生成。
+// 读盘和生成都在世界锁外面做：生成一个区块要几毫秒，持着锁做会让所有人读写方块都排队。
+// 两个协程同时要同一个区块时各做一遍，后到的丢掉自己那份，用先放进去的。
 func (w *World) chunk(cx, cz int32) *Chunk {
-	key := chunkKey(cx, cz)
-	w.mu.Lock()
-	if c, ok := w.chunks[key]; ok {
-		w.mu.Unlock()
-		return c
+	var key uint64 = chunkKey(cx, cz)
+	w.mu.RLock()
+	var found *Chunk = w.chunks[key]
+	var store ColumnStore = w.store
+	var generator string = w.Generator
+	w.mu.RUnlock()
+	if found != nil {
+		return found
 	}
-	store := w.store
-	w.mu.Unlock()
-
-	var loaded *Chunk
+	var created *Chunk = nil
 	if store != nil {
-		c, err := store.LoadColumn(cx, cz)
-		if err == nil {
-			loaded = c
+		var loaded, loadErr = store.LoadColumn(cx, cz)
+		if loadErr == nil {
+			created = loaded
 		}
 	}
-
+	if created == nil {
+		created = newChunk()
+		created.generate(generator, cx, cz)
+	}
 	w.mu.Lock()
 	defer w.mu.Unlock()
-	if c, ok := w.chunks[key]; ok {
-		return c
+	var existing *Chunk = w.chunks[key]
+	if existing != nil {
+		return existing
 	}
-	if loaded != nil {
-		w.chunks[key] = loaded
-		return loaded
-	}
-	c := newChunk()
-	c.generate(w.Generator, cx, cz)
-	w.chunks[key] = c
-	return c
+	w.chunks[key] = created
+	return created
 }
 
-// SaveDirty writes modified columns to the store.
+// dirtyColumn 一个待存盘的区块列。
+type dirtyColumn struct {
+	ChunkX int32
+	ChunkZ int32
+	Column *Chunk
+}
+
+// SaveDirty 把改过的区块列写进存储。每个区块先清脏标记再存：存的过程中又有人改它，
+// 脏标记会重新立起来，下一轮再存；反过来先存后清的话，夹在中间的修改会被一起清掉，永远不落盘。
+// 存失败的区块把脏标记还回去，别的区块照常继续。
 func (w *World) SaveDirty() error {
+	w.persistMu.Lock()
+	defer w.persistMu.Unlock()
 	w.mu.RLock()
-	store := w.store
-	type col struct {
-		cx, cz int32
-		c      *Chunk
-	}
-	var dirty []col
-	for key, c := range w.chunks {
-		if c.Dirty() {
-			cx, cz := splitChunkKey(key)
-			dirty = append(dirty, col{cx, cz, c})
+	var store ColumnStore = w.store
+	var keys []uint64 = slices.Sorted(maps.Keys(w.chunks))
+	var dirty []dirtyColumn = nil
+	var index int = 0
+	for index = 0; index < len(keys); index++ {
+		var column *Chunk = w.chunks[keys[index]]
+		if column.Dirty() {
+			var chunkX, chunkZ = splitChunkKey(keys[index])
+			dirty = append(dirty, dirtyColumn{ChunkX: chunkX, ChunkZ: chunkZ, Column: column})
 		}
 	}
 	w.mu.RUnlock()
 	if store == nil {
 		return nil
 	}
-	for _, d := range dirty {
-		if err := store.SaveColumn(d.cx, d.cz, d.c); err != nil {
-			return err
+	var failures []error = nil
+	for index = 0; index < len(dirty); index++ {
+		dirty[index].Column.ClearDirty()
+		var saveErr error = store.SaveColumn(dirty[index].ChunkX, dirty[index].ChunkZ, dirty[index].Column)
+		if saveErr != nil {
+			dirty[index].Column.MarkDirty()
+			failures = append(failures, fmt.Errorf("保存区块 (%d,%d): %w", dirty[index].ChunkX, dirty[index].ChunkZ, saveErr))
 		}
-		d.c.ClearDirty()
 	}
-	return nil
+	return errors.Join(failures...)
 }
 
 // GetBlock returns the block id/data at world coordinates.
@@ -178,8 +201,10 @@ func (w *World) SetBlock(x, y, z int32, id, data byte) bool {
 	lz := int((z%16 + 16) % 16)
 	cx := int32(math.Floor(float64(x) / 16.0))
 	cz := int32(math.Floor(float64(z) / 16.0))
-	w.chunk(cx, cz).SetBlock(lx, int(y), lz, id, data)
-	return true
+	// 写之前拿到的区块可能正好被卸载线程存盘后移走，写进去就丢了，withChunk 会在这种情况下重做。
+	return w.withChunk(cx, cz, func(column *Chunk) {
+		column.SetBlock(lx, int(y), lz, id, data)
+	})
 }
 
 // NetworkSerialize returns FullChunkData payload for column (cx, cz).

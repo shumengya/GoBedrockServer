@@ -186,6 +186,13 @@ func (c *Chunk) ClearDirty() {
 	c.dirty = false
 }
 
+// MarkDirty 把区块标成待存盘。存盘失败时用它把标记还回去，下一轮重试。
+func (c *Chunk) MarkDirty() {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+	c.dirty = true
+}
+
 const diskColumnVersion = 1
 
 // EncodeDisk writes a compact column (non-empty subchunks only, no light).
