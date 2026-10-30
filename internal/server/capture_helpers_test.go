@@ -1,0 +1,62 @@
+package server
+
+import "testing"
+
+import "go-mc-server/internal/protocol"
+import "go-mc-server/internal/protocol/packets"
+
+// sentLog 记录服务端发给某个玩家的所有包（带包 ID 的原始字节）。
+type sentLog struct {
+	raws [][]byte
+}
+
+// captureSent 从现在起记下服务端发给这个玩家的包。
+func captureSent(player *Player) *sentLog {
+	var log *sentLog = &sentLog{}
+	player.Session.SentHook = func(raw []byte) {
+		log.raws = append(log.raws, append([]byte(nil), raw...))
+	}
+	return log
+}
+
+// count 某种包发过几个。
+func (log *sentLog) count(packetID byte) int {
+	var total int = 0
+	var index int = 0
+	for index = 0; index < len(log.raws); index++ {
+		if len(log.raws[index]) > 0 && log.raws[index][0] == packetID {
+			total++
+		}
+	}
+	return total
+}
+
+// blockEntities 发过的所有 BlockEntityData，按发送顺序。
+func (log *sentLog) blockEntities(test *testing.T) []packets.BlockEntityDataPacket {
+	var found []packets.BlockEntityDataPacket = nil
+	var index int = 0
+	for index = 0; index < len(log.raws); index++ {
+		if len(log.raws[index]) == 0 || log.raws[index][0] != protocol.IDBlockEntityData {
+			continue
+		}
+		var pkt packets.BlockEntityDataPacket = packets.BlockEntityDataPacket{}
+		var err error = pkt.Decode(protocol.NewStream(log.raws[index][1:]))
+		if err != nil {
+			test.Fatalf("解码 BlockEntityData 失败: %v", err)
+		}
+		found = append(found, pkt)
+	}
+	return found
+}
+
+// lastBlockEntityAt 在 (posX,posY,posZ) 最后一次发的 BlockEntityData 的 NBT，没发过返回 false。
+func (log *sentLog) lastBlockEntityAt(test *testing.T, posX int32, posY int32, posZ int32) ([]byte, bool) {
+	var all []packets.BlockEntityDataPacket = log.blockEntities(test)
+	var index int = 0
+	for index = len(all) - 1; index >= 0; index-- {
+		if all[index].X == posX && all[index].Y == posY && all[index].Z == posZ {
+			return all[index].NBT, true
+		}
+	}
+	return nil, false
+}

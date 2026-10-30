@@ -15,9 +15,7 @@ func (srv *Server) onBlockPlaced(p *Player, x, y, z int32, id byte, color byte) 
 	wn := srv.playerWorldName(p)
 	switch id {
 	case world.BlockChest:
-		t := world.NewChestTile(x, y, z)
-		w.SetTile(t)
-		srv.broadcastTile(wn, t)
+		srv.onChestPlaced(wn, w, x, y, z)
 	case world.BlockBed:
 		t := world.NewBedTile(x, y, z, color)
 		w.SetTile(t)
@@ -70,11 +68,13 @@ func newContainerTile(tileID string, posX int32, posY int32, posZ int32) world.T
 
 // openContainer 打开箱子、熔炉这类带物品栏的方块。方块在但方块实体没有（老存档、别处生成的）就当场建一个。
 // 同一时刻只开一个窗口，窗口号固定，窗口类型随方块种类变。
+// 大箱子开的是拼好的 54 格窗口，窗口位置记在排在前面的那一半上，点哪一半打开的都一样。
 func (srv *Server) openContainer(player *Player, posX int32, posY int32, posZ int32) {
 	if player == nil || player.Session == nil {
 		return
 	}
 	var blockWorld *world.World = srv.playerWorld(player)
+	var worldName string = srv.playerWorldName(player)
 	var tileID string = containerTileFor(blockIDAt(blockWorld, posX, posY, posZ))
 	if tileID == "" {
 		return
@@ -84,28 +84,31 @@ func (srv *Server) openContainer(player *Player, posX int32, posY int32, posZ in
 		tile = newContainerTile(tileID, posX, posY, posZ)
 		blockWorld.SetTile(tile)
 	}
+	tile = srv.repairStalePair(worldName, blockWorld, tile)
+	var halves []world.Tile = chestHalves(blockWorld, tile)
+	var anchor world.Tile = halves[0]
 	var windowType byte = containerWindowType(tileID)
 	player.mu.Lock()
 	player.OpenWindow = protocol.WindowContainer
 	player.OpenWindowType = windowType
-	player.OpenTX = posX
-	player.OpenTY = posY
-	player.OpenTZ = posZ
+	player.OpenTX = anchor.X
+	player.OpenTY = anchor.Y
+	player.OpenTZ = anchor.Z
 	var runtimeID int64 = player.EntityRuntimeID
 	var session *network.Session = player.Session
 	player.mu.Unlock()
 	session.SendPacket(&packets.ContainerOpenPacket{
 		WindowID: protocol.WindowContainer,
 		Type:     windowType,
-		X:        posX,
-		Y:        posY,
-		Z:        posZ,
+		X:        anchor.X,
+		Y:        anchor.Y,
+		Z:        anchor.Z,
 		EntityID: -1,
 	})
 	session.SendPacket(&packets.ContainerSetContentPacket{
 		WindowID:  protocol.WindowContainer,
 		TargetEID: runtimeID,
-		Slots:     tile.Items,
+		Slots:     windowItems(halves),
 	})
 	if tileID == world.TileFurnace {
 		var progress []packets.Packet = furnaceProgressPackets(furnaceStateOf(tile))
@@ -116,9 +119,10 @@ func (srv *Server) openContainer(player *Player, posX int32, posY int32, posZ in
 	}
 }
 
-// openContainerTile 返回玩家当前打开的容器窗口对应的方块实体。窗口没开、方块已经不是容器、
-// 方块实体没了、人离得太远，都返回 false：这些服务端自己查，不信客户端。
-func (srv *Server) openContainerTile(player *Player) (world.Tile, bool) {
+// openContainerTiles 返回玩家当前打开的容器窗口背后的方块实体，按窗口里的顺序排（大箱子是两半）。
+// 窗口没开、方块已经不是容器、方块实体没了、人离得太远，都返回 false：这些服务端自己查，不信客户端。
+// 大箱子只要有一半够得着就算够得着。
+func (srv *Server) openContainerTiles(player *Player) ([]world.Tile, bool) {
 	player.mu.RLock()
 	var window byte = player.OpenWindow
 	var posX int32 = player.OpenTX
@@ -126,21 +130,26 @@ func (srv *Server) openContainerTile(player *Player) (world.Tile, bool) {
 	var posZ int32 = player.OpenTZ
 	player.mu.RUnlock()
 	if window != protocol.WindowContainer {
-		return world.Tile{}, false
+		return nil, false
 	}
 	var blockWorld *world.World = srv.playerWorld(player)
 	if !isContainerBlock(blockIDAt(blockWorld, posX, posY, posZ)) {
-		return world.Tile{}, false
+		return nil, false
 	}
 	var tile, found = blockWorld.TileAt(posX, posY, posZ)
 	if !found {
-		return world.Tile{}, false
+		return nil, false
 	}
+	var halves []world.Tile = chestHalves(blockWorld, tile)
 	var eyeX, eyeY, eyeZ = player.Position()
-	if !blockInReach(eyeX, eyeY, eyeZ, blockPos{PosX: posX, PosY: posY, PosZ: posZ}, maxInteractDistance) {
-		return world.Tile{}, false
+	var index int = 0
+	for index = 0; index < len(halves); index++ {
+		var cell blockPos = blockPos{PosX: halves[index].X, PosY: halves[index].Y, PosZ: halves[index].Z}
+		if blockInReach(eyeX, eyeY, eyeZ, cell, maxInteractDistance) {
+			return halves, true
+		}
 	}
-	return tile, true
+	return nil, false
 }
 
 // handleContainerWindowSlot 处理客户端对容器窗口某一格的改动。
@@ -149,25 +158,28 @@ func (srv *Server) handleContainerWindowSlot(player *Player, pkt *packets.Contai
 	if pkt.WindowID != protocol.WindowContainer {
 		return
 	}
-	var tile, usable = srv.openContainerTile(player)
+	var halves, usable = srv.openContainerTiles(player)
 	if !usable {
+		return
+	}
+	var target, local, inRange = windowSlotTarget(halves, int(pkt.Slot))
+	if !inRange {
 		return
 	}
 	var current protocol.Item = protocol.Air()
 	var rejected bool = false
-	srv.playerWorld(player).UpdateTile(tile.X, tile.Y, tile.Z, func(live *world.Tile) bool {
-		var slot int = int(pkt.Slot)
-		if slot < 0 || slot >= len(live.Items) {
+	srv.playerWorld(player).UpdateTile(target.X, target.Y, target.Z, func(live *world.Tile) bool {
+		if local >= len(live.Items) {
 			return false
 		}
 		// 熔炉的产物格只能取不能放：不允许凭空多出来，也不允许换成别的东西。
-		if live.ID == world.TileFurnace && slot == smelting.SlotOutput &&
-			!smelting.OutputChangeAllowed(live.Items[slot], pkt.Item) {
-			current = live.Items[slot]
+		if live.ID == world.TileFurnace && local == smelting.SlotOutput &&
+			!smelting.OutputChangeAllowed(live.Items[local], pkt.Item) {
+			current = live.Items[local]
 			rejected = true
 			return false
 		}
-		live.Items[slot] = pkt.Item
+		live.Items[local] = pkt.Item
 		return true
 	})
 	if rejected {
@@ -232,19 +244,14 @@ func (srv *Server) containerViewers(worldName string, posX int32, posY int32, po
 }
 
 // releaseTile 方块实体随着方块一起没了：里面的东西掉在地上，正开着它的窗口关掉。
+// 大箱子拆掉一半：只掉拆掉这半的东西，但两半的窗口都要关（格数变了），剩下那半重画成单箱。
+// 调用时 RemoveTile 已经把搭档的配对解掉了，所以要靠 tile 里留着的配对信息找到它。
 func (srv *Server) releaseTile(worldName string, tile world.Tile) {
 	srv.dropTileContents(worldName, tile)
-	var viewers []*Player = srv.containerViewers(worldName, tile.X, tile.Y, tile.Z)
-	var index int = 0
-	for index = 0; index < len(viewers); index++ {
-		viewers[index].mu.Lock()
-		viewers[index].OpenWindow = 0
-		viewers[index].OpenWindowType = 0
-		var session *network.Session = viewers[index].Session
-		viewers[index].mu.Unlock()
-		if session != nil {
-			session.SendPacket(&packets.ContainerClosePacket{WindowID: protocol.WindowContainer})
-		}
+	srv.closeContainerViewers(worldName, tile.X, tile.Y, tile.Z)
+	if tile.ID == world.TileChest && tile.Paired {
+		srv.closeContainerViewers(worldName, tile.PairX, tile.Y, tile.PairZ)
+		srv.redrawChest(worldName, tile.PairX, tile.Y, tile.PairZ)
 	}
 }
 

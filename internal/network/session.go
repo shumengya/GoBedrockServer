@@ -59,6 +59,10 @@ type Session struct {
 	// MaxChunkRadius 是客户端视距请求的上限，来自 server.properties 的 view-distance。
 	// 0 表示没配置，按 defaultMaxChunkRadius 处理。
 	MaxChunkRadius int32
+
+	// SentHook 非空时，每个要发出去的包（带包 ID 的原始字节）先交给它一份，只给测试用：
+	// 测试里的会话没有传输层，发出去的包会被丢弃，没法确认服务端到底发了什么。
+	SentHook func(raw []byte)
 }
 
 // 视距的下限和未配置时的上限。
@@ -309,6 +313,12 @@ func (s *Session) SendPacket(p packets.Packet) {
 }
 
 func (s *Session) SendBatch(rawPackets ...[]byte) {
+	if s.SentHook != nil {
+		var hookIndex int = 0
+		for hookIndex = 0; hookIndex < len(rawPackets); hookIndex++ {
+			s.SentHook(rawPackets[hookIndex])
+		}
+	}
 	// 没有传输层（测试里的零值会话）时发出去的包直接丢弃，而不是空指针崩溃。
 	if s.rakSess == nil {
 		return

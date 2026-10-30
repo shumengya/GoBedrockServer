@@ -116,6 +116,8 @@ func (w *World) TileAt(x, y, z int32) (Tile, bool) {
 	return t.clone(), true
 }
 
+// RemoveTile 删掉一个方块实体并返回删之前的样子（配对信息保留，调用方靠它知道要不要重画搭档）。
+// 大箱子的另一半在这里一并解除配对，不会留下指向已删箱子的残余。
 func (w *World) RemoveTile(x, y, z int32) (Tile, bool) {
 	w.tileMu.Lock()
 	defer w.tileMu.Unlock()
@@ -124,6 +126,7 @@ func (w *World) RemoveTile(x, y, z int32) (Tile, bool) {
 	if !ok {
 		return Tile{}, false
 	}
+	w.unpairChestLocked(x, y, z)
 	delete(w.tiles, key)
 	w.tilesDirty = true
 	return t.clone(), true
