@@ -312,6 +312,24 @@ func (s *Session) SendPacket(p packets.Packet) {
 	s.SendBatch(raw)
 }
 
+// SendPrepared 发送已经编码并压缩好的 Batch 载荷（0xFE 开头）。区块包又大又要压缩，
+// 由 worker 提前做好，tick 协程只负责按顺序交出去。测试钩子非空时把载荷解开还原成单个包再交给它。
+func (s *Session) SendPrepared(batch []byte) {
+	if s.SentHook != nil && len(batch) > 1 && batch[0] == protocol.IDBatch {
+		var inner, decodeErr = protocol.DecodeBatch(batch[1:])
+		if decodeErr == nil {
+			var hookIndex int = 0
+			for hookIndex = 0; hookIndex < len(inner); hookIndex++ {
+				s.SentHook(inner[hookIndex])
+			}
+		}
+	}
+	if s.rakSess == nil {
+		return
+	}
+	s.rakSess.SendPayload(batch)
+}
+
 func (s *Session) SendBatch(rawPackets ...[]byte) {
 	if s.SentHook != nil {
 		var hookIndex int = 0

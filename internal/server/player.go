@@ -37,7 +37,11 @@ type Player struct {
 	// CoordsShown 控制快捷栏上方的实时坐标显示，默认开启。
 	CoordsShown bool
 
-	ViewRadius      int32
+	ViewRadius int32
+	// viewEpoch 视野代数，重置视野（出生、换世界）时加一。worker 做好的区块包带着下单时的代数，
+	// 回来对不上就是给旧视野的，丢掉。chunkInflight 是此刻在 worker 手里的区块数。都受 mu 保护。
+	viewEpoch       uint64
+	chunkInflight   int
 	SentChunks      map[string]struct{}
 	ChunkQueue      [][2]int32
 	chunkQueued     map[string]struct{}

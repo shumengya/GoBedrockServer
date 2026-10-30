@@ -68,6 +68,14 @@ type Server struct {
 	// chunkSweepBusy 后台卸载区块正在跑，防止上一次没扫完又开一次。零值可用。
 	chunkSweepBusy atomic.Bool
 
+	// chunkJobs / chunkDone 是区块包 worker 池的任务和结果通道，Start 里建好之后不再变。
+	// 字面量构造的 Server 这两个是 nil，区块包在 tick 协程里同步准备。
+	chunkJobs chan chunkJob
+	chunkDone chan chunkResult
+
+	// worldSaveBusy 后台自动存盘正在跑，防止上一次没存完又开一次。零值可用。
+	worldSaveBusy atomic.Bool
+
 	// 合成配方包全服共用一份，首次需要时编码。
 	craftOnce sync.Once
 	craftRaw  []byte
@@ -165,6 +173,7 @@ func (srv *Server) Start() error {
 	if err := srv.rakSrv.Listen(addr); err != nil {
 		return err
 	}
+	srv.startChunkWorkers()
 	logger.Go("server", srv.tickLoop)
 	return nil
 }
@@ -198,7 +207,7 @@ func (srv *Server) tickLoop() {
 				srv.tickCoords()
 			}
 		case <-worldAuto.C:
-			srv.saveWorld("autosave")
+			srv.startWorldAutosave()
 		case <-playerAuto.C:
 			srv.savePlayers("player-autosave")
 		case <-sweepAuto.C:
@@ -289,6 +298,19 @@ func (srv *Server) saveWorld(reason string) {
 		}
 	}
 	logger.Info("server", "已保存世界 (%s) n=%d", reason, len(srv.worlds))
+}
+
+// startWorldAutosave 在后台存一次世界：压缩区块和写文件不能占着 tick 协程。
+// 上一次还没存完就不再开新的，返回 false。关服时的最后一次存档走 saveWorld，会等这里放开 saveMu。
+func (srv *Server) startWorldAutosave() bool {
+	if !srv.worldSaveBusy.CompareAndSwap(false, true) {
+		return false
+	}
+	logger.Go("server", func() {
+		defer srv.worldSaveBusy.Store(false)
+		srv.saveWorld("autosave")
+	})
+	return true
 }
 
 func (srv *Server) saveOneWorld(name, reason string) {
@@ -526,17 +548,6 @@ func (srv *Server) spawnPlayer(sess *network.Session) {
 	srv.sendCraftingData(sess)
 
 	logger.Info("server", "%s 初始化包已发送，等待 RequestChunkRadius", sess.Username)
-}
-
-func (srv *Server) sendChunk(sess *network.Session, w *world.World, cx, cz int32) {
-	if w == nil {
-		w = srv.world
-	}
-	sess.SendPacket(&packets.FullChunkDataPacket{
-		ChunkX: cx,
-		ChunkZ: cz,
-		Data:   w.NetworkSerialize(cx, cz),
-	})
 }
 
 func (srv *Server) sendChunksAndSpawn(sess *network.Session, radius int32) {

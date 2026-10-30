@@ -145,6 +145,9 @@ func (srv *Server) transferPlayer(p *Player, destName string) bool {
 	}
 	oldName := p.WorldName
 	oldDim := srv.worldByName(oldName).ProtocolDimension()
+	// 世界名一改，还在 worker 手里的旧世界区块包就不能再发了，趁这把锁就把视野代数加一，
+	// 不等到后面重置视野：中间隔着发 ChangeDimension，旧区块包插在后面客户端会收到错世界的区块。
+	p.viewEpoch++
 	p.WorldName = dest.Name
 	p.Dimension = dest.ProtocolDimension()
 	p.X = float32(dest.SpawnX) + 0.5

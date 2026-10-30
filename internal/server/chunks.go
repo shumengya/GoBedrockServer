@@ -83,6 +83,8 @@ func (p *Player) resetChunkView() (rad int32, px, pz float32) {
 	p.SentChunks = make(map[string]struct{})
 	p.chunkQueued = make(map[string]struct{})
 	p.ChunkQueue = nil
+	p.viewEpoch++
+	p.chunkInflight = 0
 	p.SpawnChunksSent = 0
 	p.NeedSpawnStatus = true
 	return
@@ -153,6 +155,8 @@ func (srv *Server) finishChunkSpawn(p *Player) {
 }
 
 func (srv *Server) tickChunkSend() {
+	// 先把 worker 做好的区块包交出去，再补新的单，这样一个 tick 里腾出来的名额马上就能再用。
+	srv.drainChunkResults()
 	srv.mu.RLock()
 	list := make([]*Player, 0, len(srv.players))
 	for _, p := range srv.players {
@@ -160,51 +164,6 @@ func (srv *Server) tickChunkSend() {
 	}
 	srv.mu.RUnlock()
 	for _, p := range list {
-		srv.sendQueuedChunks(p)
-	}
-}
-
-func (srv *Server) sendQueuedChunks(p *Player) {
-	if p == nil || p.Session == nil {
-		return
-	}
-	w := srv.playerWorld(p)
-	sent := 0
-	for sent < chunksPerTick {
-		p.mu.Lock()
-		if len(p.ChunkQueue) == 0 {
-			need := p.NeedSpawnStatus
-			n := p.SpawnChunksSent
-			p.mu.Unlock()
-			if need && n > 0 {
-				srv.finishChunkSpawn(p)
-			}
-			return
-		}
-		c := p.ChunkQueue[0]
-		p.ChunkQueue = p.ChunkQueue[1:]
-		key := chunkCoordKey(c[0], c[1])
-		delete(p.chunkQueued, key)
-		if _, ok := p.SentChunks[key]; ok {
-			p.mu.Unlock()
-			continue
-		}
-		p.mu.Unlock()
-		srv.sendChunk(p.Session, w, c[0], c[1])
-		p.mu.Lock()
-		if p.SentChunks == nil {
-			p.SentChunks = make(map[string]struct{})
-		}
-		if _, ok := p.SentChunks[key]; !ok {
-			p.SentChunks[key] = struct{}{}
-			p.SpawnChunksSent++
-		}
-		need := p.NeedSpawnStatus
-		n := p.SpawnChunksSent
-		p.mu.Unlock()
-		sent++
-		if need && n >= spawnChunkMin {
-			srv.finishChunkSpawn(p)
-		}
+		srv.submitQueuedChunks(p)
 	}
 }
