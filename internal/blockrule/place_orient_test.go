@@ -115,10 +115,35 @@ func TestPlaceLogAxis(test *testing.T) {
 	runPlaceCases(test, cases)
 }
 
-// 箱子和熔炉正面朝向玩家：玩家朝东正面朝西，meta 取 5。
-// 陷阱箱在参考端不继承箱子，没有朝向逻辑，meta 取物品自带的。
+// 箱子、末影箱和熔炉正面朝向玩家：玩家朝东正面朝西，meta 取 5。
+// 陷阱箱那条只是钉住现状：参考端其实也按朝向设 meta，这里还没跟上（已知缺口，见 docs/方块行为.md），
+// 补上朝向时这条用例要一起改。
 func TestPlaceFacingBlocks(test *testing.T) {
 	var cases []placeCase = []placeCase{
+		{
+			Name:    "末影箱玩家朝东",
+			View:    groundView(),
+			Request: request(130, 0, groundPos, blockrule.FaceUp, 1, 270),
+			Expect:  []blockrule.Change{change(abovePos, blockrule.BlockEnderChest, 4)},
+		},
+		{
+			Name:    "末影箱玩家朝南",
+			View:    groundView(),
+			Request: request(130, 0, groundPos, blockrule.FaceUp, 1, 0),
+			Expect:  []blockrule.Change{change(abovePos, blockrule.BlockEnderChest, 2)},
+		},
+		{
+			Name:    "末影箱玩家朝西",
+			View:    groundView(),
+			Request: request(130, 0, groundPos, blockrule.FaceUp, 1, 90),
+			Expect:  []blockrule.Change{change(abovePos, blockrule.BlockEnderChest, 5)},
+		},
+		{
+			Name:    "末影箱玩家朝北",
+			View:    groundView(),
+			Request: request(130, 0, groundPos, blockrule.FaceUp, 1, 180),
+			Expect:  []blockrule.Change{change(abovePos, blockrule.BlockEnderChest, 3)},
+		},
 		{
 			Name:    "箱子玩家朝东",
 			View:    groundView(),
@@ -150,7 +175,7 @@ func TestPlaceFacingBlocks(test *testing.T) {
 			Expect:  []blockrule.Change{change(abovePos, blockrule.BlockFurnace, 2)},
 		},
 		{
-			Name:    "陷阱箱不处理朝向",
+			Name:    "陷阱箱现状：不处理朝向（已知缺口）",
 			View:    groundView(),
 			Request: request(146, 0, groundPos, blockrule.FaceUp, 1, 90),
 			Expect:  []blockrule.Change{change(abovePos, 146, 0)},

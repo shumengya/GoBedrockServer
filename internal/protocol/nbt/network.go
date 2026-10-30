@@ -12,10 +12,11 @@ const (
 	TagString   byte = 8
 	TagCompound byte = 10
 
-	IDChest   = "Chest"
-	IDBed     = "Bed"
-	IDFurnace = "Furnace"
-	IDSign    = "Sign"
+	IDChest      = "Chest"
+	IDBed        = "Bed"
+	IDFurnace    = "Furnace"
+	IDSign       = "Sign"
+	IDEnderChest = "EnderChest"
 )
 
 type Writer struct {
@@ -88,6 +89,16 @@ func SpawnPairedChest(x, y, z int32, pairX int32, pairZ int32) []byte {
 		w.Int("z", z)
 		w.Int("pairx", pairX)
 		w.Int("pairz", pairZ)
+	})
+}
+
+// SpawnEnderChest 末影箱的方块实体只带坐标，里面的东西在玩家身上，不在方块里。
+func SpawnEnderChest(x, y, z int32) []byte {
+	return WriteNetworkCompound("", func(w *Writer) {
+		w.String("id", IDEnderChest)
+		w.Int("x", x)
+		w.Int("y", y)
+		w.Int("z", z)
 	})
 }
 

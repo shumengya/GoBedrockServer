@@ -27,6 +27,8 @@ type PlayerData struct {
 	GameMode  int32      `json:"gamemode"`
 	Inventory []SlotData `json:"inventory"`
 	HeldSlot  byte       `json:"heldSlot"`
+	// EnderChest 是玩家的末影箱，所有末影箱方块共用这一份。没用过的玩家没有这个字段。
+	EnderChest []SlotData `json:"enderChest,omitempty"`
 	// Food 是饥饿状态。老存档没有这个字段，读出来是 nil，调用方按满饥饿处理，不能当成 0 饿死人。
 	Food *FoodData `json:"food,omitempty"`
 }

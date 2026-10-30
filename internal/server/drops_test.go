@@ -91,6 +91,8 @@ func TestBlockDropsTable(test *testing.T) {
 		{name: "铲子雪块掉雪球", block: 80, held: itemWoodenShovel, want: []protocol.Item{dropOf(332, 0, 4)}},
 		{name: "剑砍蜘蛛网掉线", block: 30, held: itemIronSword, want: []protocol.Item{dropOf(287, 0, 1)}},
 		{name: "钻石镐黑曜石", block: 49, held: itemDiamondPickaxe, want: []protocol.Item{dropOf(49, 0, 1)}},
+		{name: "末影箱掉 8 个黑曜石", block: 130, meta: 4, held: itemDiamondPickaxe, want: []protocol.Item{dropOf(49, 0, 8)}},
+		{name: "空手拆末影箱也掉 8 个黑曜石", block: 130, held: 0, want: []protocol.Item{dropOf(49, 0, 8)}},
 	}
 	var index int = 0
 	for index = 0; index < len(cases); index++ {

@@ -16,6 +16,10 @@ func (srv *Server) onBlockPlaced(p *Player, x, y, z int32, id byte, color byte) 
 	switch id {
 	case world.BlockChest:
 		srv.onChestPlaced(wn, w, x, y, z)
+	case world.BlockEnderChest:
+		var enderTile world.Tile = world.NewEnderChestTile(x, y, z)
+		w.SetTile(enderTile)
+		srv.broadcastTile(wn, enderTile)
 	case world.BlockBed:
 		t := world.NewBedTile(x, y, z, color)
 		w.SetTile(t)
@@ -36,15 +40,19 @@ func (srv *Server) broadcastTile(worldName string, t world.Tile) {
 	}, "")
 }
 
-// isContainerBlock 点一下会打开物品栏窗口的方块：箱子和熔炉（含烧着的）。
+// isContainerBlock 点一下会打开物品栏窗口的方块：箱子、末影箱和熔炉（含烧着的）。
 func isContainerBlock(id byte) bool {
-	return id == world.BlockChest || id == world.BlockFurnace || id == world.BlockBurningFurnace
+	return id == world.BlockChest || id == world.BlockEnderChest ||
+		id == world.BlockFurnace || id == world.BlockBurningFurnace
 }
 
 // containerTileFor 这种方块对应哪种方块实体，不是容器返回空串。
 func containerTileFor(id byte) string {
 	if id == world.BlockChest {
 		return world.TileChest
+	}
+	if id == world.BlockEnderChest {
+		return world.TileEnderChest
 	}
 	if id == world.BlockFurnace || id == world.BlockBurningFurnace {
 		return world.TileFurnace
@@ -62,6 +70,9 @@ func containerWindowType(tileID string) byte {
 func newContainerTile(tileID string, posX int32, posY int32, posZ int32) world.Tile {
 	if tileID == world.TileFurnace {
 		return world.NewFurnaceTile(posX, posY, posZ)
+	}
+	if tileID == world.TileEnderChest {
+		return world.NewEnderChestTile(posX, posY, posZ)
 	}
 	return world.NewChestTile(posX, posY, posZ)
 }
@@ -108,7 +119,7 @@ func (srv *Server) openContainer(player *Player, posX int32, posY int32, posZ in
 	session.SendPacket(&packets.ContainerSetContentPacket{
 		WindowID:  protocol.WindowContainer,
 		TargetEID: runtimeID,
-		Slots:     windowItems(halves),
+		Slots:     srv.windowContents(player, halves),
 	})
 	if tileID == world.TileFurnace {
 		var progress []packets.Packet = furnaceProgressPackets(furnaceStateOf(tile))
@@ -160,6 +171,11 @@ func (srv *Server) handleContainerWindowSlot(player *Player, pkt *packets.Contai
 	}
 	var halves, usable = srv.openContainerTiles(player)
 	if !usable {
+		return
+	}
+	// 末影箱的格子在玩家自己身上，方块实体里没有，不走下面按方块实体找格子的路。
+	if halves[0].ID == world.TileEnderChest {
+		player.setEnderChestSlot(int(pkt.Slot), pkt.Item)
 		return
 	}
 	var target, local, inRange = windowSlotTarget(halves, int(pkt.Slot))

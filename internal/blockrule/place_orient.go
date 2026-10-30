@@ -22,10 +22,10 @@ func isStair(id byte) bool {
 	return false
 }
 
-// hasFacing 放下时正面朝向玩家的方块：箱子和两种熔炉。
-// 陷阱箱、末影箱在参考端不继承箱子，没有朝向逻辑，所以不在这里。
+// hasFacing 放下时正面朝向玩家的方块：箱子、末影箱和两种熔炉。
+// 陷阱箱在参考端的 place() 里同样按玩家朝向设 meta，这里还没跟上，见 docs/方块行为.md 的「已知缺口」。
 func hasFacing(id byte) bool {
-	return id == BlockChest || id == BlockFurnace || id == BlockBurningFurnace
+	return id == BlockChest || id == BlockEnderChest || id == BlockFurnace || id == BlockBurningFurnace
 }
 
 // stairMeta 低 2 位是"往哪边升高"，bit 2 是倒置。

@@ -7,6 +7,7 @@ import "go-mc-server/internal/protocol"
 
 const BlockFurnace byte = 61
 const BlockBurningFurnace byte = 62
+const BlockEnderChest byte = 130
 
 // SlotCount 这种方块实体有几格物品栏，没有物品栏的返回 0。
 func SlotCount(id string) int {
@@ -21,7 +22,7 @@ func SlotCount(id string) int {
 
 // KnownTile 读档时认得的方块实体种类，别的一律丢弃。
 func KnownTile(id string) bool {
-	return SlotCount(id) > 0 || id == TileBed || id == TileSign
+	return SlotCount(id) > 0 || id == TileBed || id == TileSign || id == TileEnderChest
 }
 
 func padItems(items []protocol.Item, size int) []protocol.Item {
@@ -79,4 +80,10 @@ func (w *World) TilePositions(id string) [][3]int32 {
 // NewFurnaceTile 一个空的熔炉：输入、燃料、产物三格都是空的，没在烧。
 func NewFurnaceTile(posX int32, posY int32, posZ int32) Tile {
 	return Tile{ID: TileFurnace, X: posX, Y: posY, Z: posZ, Items: make([]protocol.Item, FurnaceSize)}
+}
+
+// NewEnderChestTile 末影箱的方块实体只负责让客户端把箱子画出来，没有物品栏：
+// 里面的东西属于玩家，不属于这个方块。
+func NewEnderChestTile(posX int32, posY int32, posZ int32) Tile {
+	return Tile{ID: TileEnderChest, X: posX, Y: posY, Z: posZ}
 }

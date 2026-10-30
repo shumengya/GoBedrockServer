@@ -57,6 +57,9 @@ type Player struct {
 	HeldSlot  byte
 	HeldItem  protocol.Item
 
+	// EnderChest 玩家的末影箱，没用过时是 nil，用到时才补满 27 格。受 mu 保护。
+	EnderChest []protocol.Item
+
 	combat combatState
 	food   foodState
 	mining miningState
@@ -156,21 +159,33 @@ func (p *Player) Snapshot(worldName string) storage.PlayerData {
 		wn = worldName
 	}
 	return storage.PlayerData{
-		UUID:      p.UUID,
-		Name:      p.Username,
-		XUID:      p.XUID,
-		World:     wn,
-		Dimension: p.Dimension,
-		X:         p.X,
-		Y:         p.Y,
-		Z:         p.Z,
-		Yaw:       p.Yaw,
-		Pitch:     p.Pitch,
-		GameMode:  p.GameMode,
-		Inventory: storage.SlotsFromItems(p.Inventory),
-		HeldSlot:  p.HeldSlot,
-		Food:      p.food.save(),
+		UUID:       p.UUID,
+		Name:       p.Username,
+		XUID:       p.XUID,
+		World:      wn,
+		Dimension:  p.Dimension,
+		X:          p.X,
+		Y:          p.Y,
+		Z:          p.Z,
+		Yaw:        p.Yaw,
+		Pitch:      p.Pitch,
+		GameMode:   p.GameMode,
+		Inventory:  storage.SlotsFromItems(p.Inventory),
+		HeldSlot:   p.HeldSlot,
+		EnderChest: enderChestSlots(p.EnderChest),
+		Food:       p.food.save(),
 	}
+}
+
+// enderChestSlots 末影箱全空就不写，省得每个存档都带 27 个空格。
+func enderChestSlots(items []protocol.Item) []storage.SlotData {
+	var index int = 0
+	for index = 0; index < len(items); index++ {
+		if !items[index].IsAir() {
+			return storage.SlotsFromItems(items)
+		}
+	}
+	return nil
 }
 
 func (p *Player) ApplySave(d storage.PlayerData) {
@@ -193,6 +208,9 @@ func (p *Player) ApplySave(d storage.PlayerData) {
 	p.HeldSlot = d.HeldSlot
 	if int(p.HeldSlot) < len(p.Inventory) {
 		p.HeldItem = p.Inventory[p.HeldSlot]
+	}
+	if len(d.EnderChest) > 0 {
+		p.EnderChest = storage.ItemsFromSlots(d.EnderChest, protocol.ChestSize)
 	}
 	p.food.restore(d.Food)
 }

@@ -9,12 +9,13 @@ import (
 )
 
 const (
-	TileChest   = nbt.IDChest
-	TileBed     = nbt.IDBed
-	TileFurnace = nbt.IDFurnace
-	TileSign    = nbt.IDSign
-	FurnaceSize = protocol.FurnaceSize
-	ChestSize   = protocol.ChestSize
+	TileChest      = nbt.IDChest
+	TileBed        = nbt.IDBed
+	TileFurnace    = nbt.IDFurnace
+	TileSign       = nbt.IDSign
+	TileEnderChest = nbt.IDEnderChest
+	FurnaceSize    = protocol.FurnaceSize
+	ChestSize      = protocol.ChestSize
 )
 
 // Tile is a block entity (chest inventory / bed color). Workbenches have no tile.
@@ -72,6 +73,8 @@ func (t Tile) SpawnNBT() []byte {
 		return nbt.SpawnFurnace(t.X, t.Y, t.Z, int16(t.BurnTime), int16(t.CookTime))
 	case TileSign:
 		return nbt.SpawnSign(t.X, t.Y, t.Z, t.Lines)
+	case TileEnderChest:
+		return nbt.SpawnEnderChest(t.X, t.Y, t.Z)
 	default:
 		if t.ID == TileChest && t.Paired {
 			return nbt.SpawnPairedChest(t.X, t.Y, t.Z, t.PairX, t.PairZ)

@@ -86,3 +86,23 @@ func TestTilesOmitUnusedFields(test *testing.T) {
 		}
 	}
 }
+
+// 末影箱的方块实体存盘再读回来还是末影箱，而且没有物品栏：它的东西在玩家身上，不在方块里。
+func TestEnderChestTileRoundTrip(test *testing.T) {
+	var directory string = test.TempDir()
+	var saved []world.Tile = []world.Tile{world.NewEnderChestTile(7, 64, -3)}
+	var saveErr error = storage.SaveTiles(directory, "w", storage.TilesFromWorld(saved))
+	if saveErr != nil {
+		test.Fatalf("存盘失败: %v", saveErr)
+	}
+	var records, loadErr = storage.LoadTiles(directory, "w")
+	if loadErr != nil {
+		test.Fatalf("读盘失败: %v", loadErr)
+	}
+	var target *world.World = world.New("w")
+	target.LoadTiles(storage.WorldTilesFromRecords(records))
+	var loaded, found = target.TileAt(7, 64, -3)
+	if !found || loaded.ID != world.TileEnderChest || len(loaded.Items) != 0 {
+		test.Fatalf("末影箱应原样回来且没有物品栏，实际 找到=%v %+v", found, loaded)
+	}
+}

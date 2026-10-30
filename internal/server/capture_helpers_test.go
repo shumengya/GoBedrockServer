@@ -60,3 +60,22 @@ func (log *sentLog) lastBlockEntityAt(test *testing.T, posX int32, posY int32, p
 	}
 	return nil, false
 }
+
+// lastContainerContent 最后一次发给这个玩家的、指定窗口号的整排格子，没发过返回 false。
+func (log *sentLog) lastContainerContent(test *testing.T, windowID uint32) ([]protocol.Item, bool) {
+	var index int = 0
+	for index = len(log.raws) - 1; index >= 0; index-- {
+		if len(log.raws[index]) == 0 || log.raws[index][0] != protocol.IDContainerSetContent {
+			continue
+		}
+		var pkt packets.ContainerSetContentPacket = packets.ContainerSetContentPacket{}
+		var err error = pkt.Decode(protocol.NewStream(log.raws[index][1:]))
+		if err != nil {
+			test.Fatalf("解码 ContainerSetContent 失败: %v", err)
+		}
+		if pkt.WindowID == windowID {
+			return pkt.Slots, true
+		}
+	}
+	return nil, false
+}

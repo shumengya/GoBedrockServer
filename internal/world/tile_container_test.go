@@ -8,6 +8,26 @@ import "go-mc-server/internal/protocol"
 import "go-mc-server/internal/protocol/nbt"
 import "go-mc-server/internal/world"
 
+// 末影箱的方块实体：没有物品栏，SpawnNBT 走末影箱自己的那一份而不是落到单箱的 default 分支。
+func TestEnderChestTile(test *testing.T) {
+	var tile world.Tile = world.NewEnderChestTile(4, 70, -5)
+	if tile.ID != world.TileEnderChest || len(tile.Items) != 0 {
+		test.Fatalf("末影箱方块实体不该有物品栏，实际 %+v", tile)
+	}
+	if !bytes.Equal(tile.SpawnNBT(), nbt.SpawnEnderChest(4, 70, -5)) {
+		test.Fatalf("末影箱的 NBT 不对: %x", tile.SpawnNBT())
+	}
+	if bytes.Equal(tile.SpawnNBT(), nbt.SpawnChest(4, 70, -5)) {
+		test.Fatal("末影箱的 NBT 不该和普通箱子一样，客户端会把它画成普通箱子")
+	}
+	var target *world.World = world.New("ender")
+	target.SetTile(tile)
+	var stored, found = target.TileAt(4, 70, -5)
+	if !found || len(stored.Items) != 0 {
+		test.Fatalf("存进世界后仍不该有物品栏，实际 找到=%v 格数=%d", found, len(stored.Items))
+	}
+}
+
 type slotCountCase struct {
 	Name  string
 	ID    string
@@ -22,6 +42,7 @@ func TestSlotCountAndKnownTile(test *testing.T) {
 		{Name: "熔炉", ID: world.TileFurnace, Slots: 3, Known: true},
 		{Name: "床", ID: world.TileBed, Slots: 0, Known: true},
 		{Name: "告示牌", ID: world.TileSign, Slots: 0, Known: true},
+		{Name: "末影箱的方块实体没有格子，东西在玩家身上", ID: world.TileEnderChest, Slots: 0, Known: true},
 		{Name: "没见过的旗帜", ID: "Banner", Slots: 0, Known: false},
 		{Name: "空串", ID: "", Slots: 0, Known: false},
 	}

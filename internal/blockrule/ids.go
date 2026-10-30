@@ -37,6 +37,7 @@ const BlockWheat byte = 59
 const BlockFarmland byte = 60
 const BlockFurnace byte = 61
 const BlockBurningFurnace byte = 62
+const BlockEnderChest byte = 130
 const BlockWoodDoor byte = 64
 const BlockLadder byte = 65
 const BlockSignPost byte = 63
