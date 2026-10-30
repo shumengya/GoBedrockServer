@@ -120,17 +120,15 @@ func TestPairChests(test *testing.T) {
 	}
 }
 
+type partnerCase struct {
+	Name   string
+	Tiles  []world.Tile
+	Expect bool
+}
+
 // 搭档必须两边互相指着对方才算：只有一边记着，就当没配对。
 func TestChestPartnerRequiresMutualPointing(test *testing.T) {
-	var cases []struct {
-		Name   string
-		Tiles  []world.Tile
-		Expect bool
-	} = []struct {
-		Name   string
-		Tiles  []world.Tile
-		Expect bool
-	}{
+	var cases []partnerCase = []partnerCase{
 		{
 			Name: "互相指着",
 			Tiles: []world.Tile{
@@ -173,7 +171,7 @@ func TestChestPartnerRequiresMutualPointing(test *testing.T) {
 	}
 	var index int = 0
 	for index = 0; index < len(cases); index++ {
-		var item = cases[index] // 闭包里用循环变量前先拷贝
+		var item partnerCase = cases[index] // 闭包里用循环变量前先拷贝
 		test.Run(item.Name, func(sub *testing.T) {
 			var target *world.World = world.New("partner")
 			target.LoadTiles(item.Tiles)
@@ -188,19 +186,16 @@ func TestChestPartnerRequiresMutualPointing(test *testing.T) {
 	}
 }
 
+type orderCase struct {
+	Name  string
+	Left  world.Tile
+	Right world.Tile
+	Front world.Tile
+}
+
 // 双箱两半在窗口里的顺序只取决于位置（照参考端 x + (z<<15) 大的在前），和传参顺序无关。
 func TestOrderChestHalves(test *testing.T) {
-	var cases []struct {
-		Name  string
-		Left  world.Tile
-		Right world.Tile
-		Front world.Tile
-	} = []struct {
-		Name  string
-		Left  world.Tile
-		Right world.Tile
-		Front world.Tile
-	}{
+	var cases []orderCase = []orderCase{
 		{
 			Name:  "沿 Z：z 大的在前",
 			Left:  world.Tile{X: 0, Z: 0},
@@ -222,7 +217,7 @@ func TestOrderChestHalves(test *testing.T) {
 	}
 	var index int = 0
 	for index = 0; index < len(cases); index++ {
-		var item = cases[index] // 闭包里用循环变量前先拷贝
+		var item orderCase = cases[index] // 闭包里用循环变量前先拷贝
 		test.Run(item.Name, func(sub *testing.T) {
 			var frontA, backA = world.OrderChestHalves(item.Left, item.Right)
 			var frontB, backB = world.OrderChestHalves(item.Right, item.Left)
