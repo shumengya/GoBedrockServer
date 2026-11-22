@@ -1,9 +1,11 @@
 package server
 
 import "strings"
+import "slices"
 import "testing"
 import "time"
 
+import "go-mc-server/internal/command"
 import "go-mc-server/internal/storage"
 
 func TestStripColors(test *testing.T) {
@@ -184,6 +186,32 @@ func TestPlayerTimeCommandUsesOwnWorld(test *testing.T) {
 	fixture.srv.dispatchCommand(boss.Session, "time stop")
 	if !fixture.srv.worlds["nether"].TimeStopped() || fixture.srv.world.TimeStopped() {
 		test.Fatal("只应冻结地狱的时间")
+	}
+}
+
+// 全服命令应覆盖无玩家的世界，并按世界名返回各自的时钟。
+func TestTimeAllWorlds(test *testing.T) {
+	var fixture *adminFixture = newAdminFixture(test)
+	var replies []string = nil
+	var ctx *command.Context = &command.Context{Admin: fixture.admin(), IsConsole: true,
+		Reply: func(message string) { replies = append(replies, message) },
+	}
+	fixture.srv.cmds.Dispatch(ctx, "time all set noon")
+	fixture.srv.cmds.Dispatch(ctx, "time add 10")
+	fixture.srv.cmds.Dispatch(ctx, "time all add 15")
+	replies = nil
+	fixture.srv.cmds.Dispatch(ctx, "time all query gametime")
+	var expected []string = []string{"nether：游戏时间累计 6015 tick", "world：游戏时间累计 6025 tick"}
+	if !slices.Equal(replies, expected) {
+		test.Fatalf("期望 %v，实际 %v", expected, replies)
+	}
+	fixture.srv.cmds.Dispatch(ctx, "time all stop")
+	if !fixture.srv.world.TimeStopped() || !fixture.srv.worlds["nether"].TimeStopped() {
+		test.Fatal("期望两个世界都被冻结，实际仍有时钟在运行")
+	}
+	fixture.srv.cmds.Dispatch(ctx, "time all start")
+	if fixture.srv.world.TimeStopped() || fixture.srv.worlds["nether"].TimeStopped() {
+		test.Fatal("期望两个世界都恢复运行，实际仍有时钟被冻结")
 	}
 }
 

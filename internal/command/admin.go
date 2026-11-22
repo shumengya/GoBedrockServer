@@ -42,6 +42,7 @@ type Admin interface {
 	RequestStop()
 
 	// 世界时钟，按世界磁盘名区分。
+	WorldNames() []string
 	WorldTime(worldName string) (int32, bool)
 	SetWorldTime(worldName string, ticks int32)
 	AddWorldTime(worldName string, delta int32)

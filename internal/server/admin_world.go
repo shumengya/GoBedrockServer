@@ -1,6 +1,8 @@
 package server
 
 import "fmt"
+import "maps"
+import "slices"
 
 import "go-mc-server/internal/command"
 import "go-mc-server/internal/logger"
@@ -110,6 +112,10 @@ func (admin serverAdmin) SaveAll() {
 
 func (admin serverAdmin) RequestStop() {
 	admin.srv.RequestStop()
+}
+
+func (admin serverAdmin) WorldNames() []string {
+	return slices.Sorted(maps.Keys(admin.srv.worlds))
 }
 
 func (admin serverAdmin) WorldTime(worldName string) (int32, bool) {

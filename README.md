@@ -37,7 +37,7 @@ go build -o go-mc-server.exe .
 **世界**
 - 多世界：`world`（超平坦）/ `sky` / `ocean` / `nether` / `end`，`/world` 切换
 - 区块按距离排队发送，视距上限可配置（`view-distance`，2–32）
-- 昼夜循环：每世界独立时钟，可 `/time` 调整或冻结
+- 昼夜循环：每世界独立时钟，可 `/time` 调整或冻结；例如 `/time all set noon` 同时设置全部世界，`/time all query` 分世界查询
 - 存档：区块、玩家、世界元数据、方块实体、掉落物
 
 **玩法**
