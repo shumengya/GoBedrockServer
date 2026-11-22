@@ -5,6 +5,7 @@
 - 版本：Bedrock 1.1.x（例如 1.1.7），协议号 **113**（同时接受 110–113）
 - 传输：RakNet（UDP，默认端口 19132）
 - 待办与进度见 [TODO.md](TODO.md)
+- 协议查阅：[PocketMine 1.1.x 游戏包索引](docs/PocketMine协议索引.md) · [RakNet、Batch 与常用包字段](docs/PocketMine协议线格式.md)
 
 ## 运行
 
