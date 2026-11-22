@@ -13,9 +13,10 @@ const minEatInterval time.Duration = time.Second
 
 // eatOutcome 是一次进食的结果。
 type eatOutcome struct {
-	Accepted bool
-	Slot     int
-	Held     protocol.Item
+	ConsumedID int32
+	Accepted   bool
+	Slot       int
+	Held       protocol.Item
 	// Overflow 是背包放不下的残留物（比如碗），要丢在地上。
 	Overflow protocol.Item
 }
@@ -66,7 +67,7 @@ func (player *Player) eatHeld(now time.Time) (eatOutcome, string) {
 	}
 	player.food.LastEat = now
 	player.food.eat(info.Restore, info.Saturation)
-	var outcome eatOutcome = eatOutcome{Accepted: true, Slot: slot, Held: held}
+	var outcome eatOutcome = eatOutcome{Accepted: true, Slot: slot, Held: held, ConsumedID: held.ID}
 	if player.GameMode == int32(protocol.GameModeCreative) {
 		return outcome, ""
 	}
@@ -124,6 +125,9 @@ func (srv *Server) finishEating(player *Player) {
 		"",
 	)
 	srv.broadcastHeldItem(player)
+	if outcome.ConsumedID == itemChorusFruit {
+		srv.teleportAfterChorusFruit(player, defaultDropRandom{})
+	}
 	if !outcome.Overflow.IsAir() {
 		var posX, posY, posZ = player.Position()
 		srv.spawnDroppedItem(outcome.Overflow, posX, posY, posZ, 0, 0.1, 0, 10, srv.playerWorldName(player))

@@ -15,10 +15,11 @@ type LevelEventPacket struct {
 
 // Event IDs from LevelEventPacket.php (protocol 113).
 const (
-	LevelEventParticleDestroy    int32 = 2001
-	LevelEventParticlePunchBlock int32 = 2014
-	LevelEventBlockStartBreak    int32 = 3600
-	LevelEventBlockStopBreak     int32 = 3601
+	LevelEventSoundEndermanTeleport int32 = 1018
+	LevelEventParticleDestroy       int32 = 2001
+	LevelEventParticlePunchBlock    int32 = 2014
+	LevelEventBlockStartBreak       int32 = 3600
+	LevelEventBlockStopBreak        int32 = 3601
 )
 
 func (p *LevelEventPacket) ID() byte { return protocol.IDLevelEvent }

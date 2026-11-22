@@ -5,7 +5,7 @@ import "go-mc-server/internal/protocol"
 // foodInfo 是一种食物的营养数据，数值取自参考端各 Food 子类的 getFoodRestore / getSaturationRestore。
 //
 // 暂未实现的附带效果（药水效果系统做完后补）：毒马铃薯 / 生鸡肉 / 腐肉 / 蜘蛛眼 / 河豚的中毒与饥饿，
-// 金苹果的再生与吸收，紫颈果的随机传送。现在这些食物只有营养，没有副作用。
+// 金苹果的再生与吸收。
 type foodInfo struct {
 	Restore    float32
 	Saturation float32
@@ -18,6 +18,7 @@ type foodInfo struct {
 const itemBowl int32 = 281
 const itemRawFish int32 = 349
 const itemCookedFish int32 = 350
+const itemChorusFruit int32 = 432
 
 // 1.1 的鱼类 meta：0 鱼、1 鲑鱼、2 小丑鱼、3 河豚。
 const fishMetaSalmon int32 = 1
@@ -26,6 +27,8 @@ const fishMetaPuffer int32 = 3
 
 // foodByID 是不看 meta 的食物表。
 var foodByID map[int32]foodInfo = map[int32]foodInfo{
+	itemChorusFruit: {Restore: 4, Saturation: 2.4, AlwaysEdible: true},
+
 	260: {Restore: 4, Saturation: 2.4},                      // 苹果
 	297: {Restore: 5, Saturation: 6},                        // 面包
 	319: {Restore: 3, Saturation: 0.6},                      // 生猪排
@@ -49,7 +52,6 @@ var foodByID map[int32]foodInfo = map[int32]foodInfo{
 	412: {Restore: 5, Saturation: 6},                        // 熟兔肉
 	423: {Restore: 2, Saturation: 1.2},                      // 生羊肉
 	424: {Restore: 6, Saturation: 9.6},                      // 熟羊肉
-	432: {Restore: 4, Saturation: 2.4, AlwaysEdible: true},  // 紫颈果
 	457: {Restore: 1, Saturation: 1.2},                      // 甜菜根
 	466: {Restore: 4, Saturation: 9.6, AlwaysEdible: true},  // 附魔金苹果
 	282: {Restore: 6, Saturation: 7.2, Residue: bowlItem()}, // 蘑菇煲
