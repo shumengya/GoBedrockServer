@@ -6,6 +6,7 @@ import (
 	"sync"
 	"time"
 
+	items "go-mc-server/internal/item"
 	"go-mc-server/internal/network"
 	"go-mc-server/internal/protocol"
 	"go-mc-server/internal/protocol/packets"
@@ -237,20 +238,6 @@ func (p *Player) ApplyInventorySlot(slot int, item protocol.Item) bool {
 	return true
 }
 
-const maxStackByte = 64
-
-// stackLimit 工具按耐久区分，必须一格一个，否则一叠镐子共用一个损耗值。
-func stackLimit(item protocol.Item) byte {
-	if toolInfoFor(item).MaxDurability > 0 {
-		return 1
-	}
-	var _, isArmor = armorInfoFor(item)
-	if isArmor {
-		return 1
-	}
-	return maxStackByte
-}
-
 // AddItem merges into existing stacks then empty slots. leftover is what did not fit.
 // ok is true when at least one item was placed.
 func (p *Player) AddItem(item protocol.Item) (leftover protocol.Item, ok bool) {
@@ -266,7 +253,7 @@ func (p *Player) addItemLocked(item protocol.Item) (leftover protocol.Item, ok b
 		return protocol.Air(), false
 	}
 	remain := item.Count
-	var limit byte = stackLimit(item)
+	var limit byte = items.StackLimit(item.ID)
 	// Merge into matching stacks first.
 	for i := 0; i < len(p.Inventory) && remain > 0; i++ {
 		slot := p.Inventory[i]
@@ -319,7 +306,7 @@ func (p *Player) CanAddItem(item protocol.Item) bool {
 		return false
 	}
 	need := int(item.Count)
-	var limit byte = stackLimit(item)
+	var limit byte = items.StackLimit(item.ID)
 	space := 0
 	for i := 0; i < len(p.Inventory); i++ {
 		slot := p.Inventory[i]

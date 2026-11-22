@@ -742,6 +742,10 @@ func (srv *Server) handleMobEquipment(sess *network.Session, pkt *packets.MobEqu
 	if p == nil {
 		return
 	}
+	if pkt.Item.Count > item.StackLimit(pkt.Item.ID) {
+		srv.sendPlayerInventory(p)
+		return
+	}
 	p.mu.Lock()
 	if pkt.HotbarSlot < 9 {
 		p.HeldSlot = pkt.HotbarSlot
@@ -770,6 +774,10 @@ func (srv *Server) handleContainerSetSlot(sess *network.Session, pkt *packets.Co
 		return
 	}
 	if pkt.WindowID == 0 {
+		if pkt.Item.Count > item.StackLimit(pkt.Item.ID) {
+			srv.sendPlayerInventory(p)
+			return
+		}
 		slot := protocol.InventorySlotFromWindow(pkt.Slot)
 		if slot < 0 {
 			return

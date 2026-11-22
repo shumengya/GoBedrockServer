@@ -29,6 +29,7 @@ var unstackableIDs map[int32]bool = map[int32]bool{
 	272: true, 273: true, 274: true, 275: true, 276: true, 277: true, 278: true, 279: true,
 	283: true, 284: true, 285: true, 286: true,
 	290: true, 291: true, 292: true, 293: true, 294: true,
+	259: true, 261: true, 346: true, 359: true, 398: true, 444: true,
 }
 
 // Register adds an item type. Duplicate IDs merge aliases.
@@ -36,8 +37,10 @@ func Register(t *Type) {
 	if t.MaxStack <= 0 {
 		t.MaxStack = 64
 	}
-	if unstackableIDs[t.ID] {
+	if unstackableIDs[t.ID] || (t.ID >= 298 && t.ID <= 317) {
 		t.MaxStack = 1
+	} else if t.ID == 332 || t.ID == 344 {
+		t.MaxStack = 16
 	}
 	if existing, ok := byID[t.ID]; ok {
 		mergeAliases(existing, t)
@@ -81,6 +84,13 @@ func ByID(id int32) (*Type, bool) {
 		return t, true
 	}
 	return fromBlock(id)
+}
+
+func StackLimit(id int32) byte {
+	if entry := byID[id]; entry != nil {
+		return byte(entry.MaxStack)
+	}
+	return 64
 }
 
 func ByName(name string) (*Type, bool) {

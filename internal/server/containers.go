@@ -4,6 +4,7 @@ import "maps"
 import "slices"
 
 import "go-mc-server/internal/network"
+import "go-mc-server/internal/item"
 import "go-mc-server/internal/protocol"
 import "go-mc-server/internal/protocol/packets"
 import "go-mc-server/internal/smelting"
@@ -171,6 +172,13 @@ func (srv *Server) handleContainerWindowSlot(player *Player, pkt *packets.Contai
 	}
 	var halves, usable = srv.openContainerTiles(player)
 	if !usable {
+		return
+	}
+	if pkt.Item.Count > item.StackLimit(pkt.Item.ID) {
+		var contents = srv.windowContents(player, halves)
+		if pkt.Slot >= 0 && int(pkt.Slot) < len(contents) {
+			srv.resendContainerSlot(player, int(pkt.Slot), contents[pkt.Slot])
+		}
 		return
 	}
 	// 末影箱的格子在玩家自己身上，方块实体里没有，不走下面按方块实体找格子的路。
