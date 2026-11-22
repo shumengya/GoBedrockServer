@@ -26,7 +26,7 @@ func TestCloseAfterFlushDeliversQueuedPayload(test *testing.T) {
 		test.Fatal("客户端地址不是 UDP 地址")
 	}
 
-	var srv *Server = NewServer(nil, nil)
+	var srv *Server = NewServer(nil, nil, nil)
 	srv.conn = serverConn
 	var sess *Session = newSession(srv, clientAddr, 1400)
 	srv.sessions[clientAddr.String()] = sess
@@ -83,7 +83,7 @@ func TestCloseAfterFlushDeliversQueuedPayload(test *testing.T) {
 
 // RemoteIP 只返回 IP，不带端口，封禁列表按这个比对。
 func TestRemoteIPHasNoPort(test *testing.T) {
-	var sess *Session = newSession(NewServer(nil, nil), &net.UDPAddr{IP: net.IPv4(10, 1, 2, 3), Port: 19132}, 1400)
+	var sess *Session = newSession(NewServer(nil, nil, nil), &net.UDPAddr{IP: net.IPv4(10, 1, 2, 3), Port: 19132}, 1400)
 	if sess.RemoteIP() != "10.1.2.3" {
 		test.Fatalf("RemoteIP=%q", sess.RemoteIP())
 	}

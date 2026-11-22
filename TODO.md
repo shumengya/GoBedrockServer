@@ -170,7 +170,7 @@
 - [x] `ops.txt`、`banned-players.txt`、`banned-ips.txt`、`white-list.txt`（格式一致，可直接互相拷贝）
 
 ### 28. 网络附加
-- [ ] Query（服务器列表查人数；现在离线 Pong 里的在线人数恒为 0）
+- [x] Query（挑战握手、简略统计、完整统计与玩家名单）；离线 Pong 也报告在线人数
 - [ ] RCON 远程控制台
 - [ ] UPnP
 
@@ -182,7 +182,7 @@
 
 ### 31. RakNet 加固
 - [ ] 拥塞控制、分片数量上限、单 IP 限流/封禁、畸形包防护
-- [ ] 离线 Pong 里的协议版本号改从常量取
+- [x] 离线 Pong 从协议常量取最低兼容版本
 
 ### 32. 运维命令
 - [ ] `/status`、`/timings`、`/gc`、`/version`、`/plugins`、`/reload`、崩溃转储

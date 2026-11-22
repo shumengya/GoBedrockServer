@@ -4,6 +4,7 @@
 
 - 版本：Bedrock 1.1.x（例如 1.1.7），协议号 **113**（同时接受 110–113）
 - 传输：RakNet（UDP，默认端口 19132）
+- 在线人数：游戏列表 Pong 和 Query 都只统计已进入游戏的玩家。Query 与游戏共用 UDP 端口；在 `server.properties` 设 `enable-query=off` 可关闭玩家名单和统计查询，仍保留 Pong。
 - 待办与进度见 [TODO.md](TODO.md)
 - 协议查阅：[PocketMine 1.1.x 游戏包索引](docs/PocketMine协议索引.md) · [RakNet、Batch 与常用包字段](docs/PocketMine协议线格式.md)
 

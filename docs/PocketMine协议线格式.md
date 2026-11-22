@@ -67,4 +67,12 @@ RakNet 版本 **8** 与游戏协议号 **113** 位于不同层。离线握手依
 | Query | UDP 服务器信息查询。握手类型 9 返回带 NUL 终止的挑战值；统计请求类型 0 带会话 ID 和挑战值，可取简略或完整信息。与服务器列表的 RakNet Pong 不同 | [QueryHandler.php](../pocketmine服务器参考/src/pocketmine/network/query/QueryHandler.php) |
 | RCON | TCP 远程控制台。帧为 LE32 正文长度、LE32 请求 ID、LE32 类型、负载、两个 NUL；认证和命令响应都使用此帧格式 | [RCONInstance.php](../pocketmine服务器参考/src/pocketmine/network/rcon/RCONInstance.php) |
 
-这两项是参考端协议，Go 的实现进度见 [TODO 第 28 项](../TODO.md)。
+Go 已支持 Query；RCON 的进度见 [TODO 第 28 项](../TODO.md)。Query 与游戏使用同一个 UDP 端口，没有 RakNet 封装。多字节整数的字节序容易混淆：
+
+| 步骤 | 请求（客户端 → 服务端） | 响应（服务端 → 客户端） |
+|---|---|---|
+| 获取挑战 | `FE FD 09` + 4 字节会话标识 | `09` + 原会话标识 + 十进制有符号挑战值文本 + NUL |
+| 简略统计 | `FE FD 00` + 会话标识 + 挑战值 **BE32** | `00` + 会话标识；接着是 MOTD、SMP/CMP、世界名、在线人数、人数上限（各以 NUL 结尾），然后是端口 **LE16** 和以 NUL 结尾的地址 |
+| 完整统计 | 简略请求末尾再加 4 个零字节 | 相同响应头；其后是以 NUL 分隔的键值对，从 `splitnum`、单字节 `80` 开始。最后一个值的终止符之后接 `00 01 player_ 00 00`、逐个以 NUL 终止的玩家名和最后一个 NUL |
+
+例如挑战文本 `-2` 在线上是 `2D 32 00`，回传时必须变成 `FF FF FF FE`。挑战绑定来源 IP；过期后重新握手。完整统计里的 `hostport` 是十进制文本，只有简略统计的端口采用小端整数。

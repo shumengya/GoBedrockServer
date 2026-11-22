@@ -2,6 +2,8 @@ package raknet
 
 import (
 	"encoding/binary"
+	"fmt"
+	"go-mc-server/internal/protocol"
 	"net"
 
 	"go-mc-server/internal/logger"
@@ -64,7 +66,8 @@ func (srv *Server) handleUnconnectedPing(data []byte, addr *net.UDPAddr) {
 	}
 	pingTime := int64(binary.BigEndian.Uint64(data[1:9]))
 	// Build the MOTD string (MCPE format).
-	motd := buildMOTD(srv.cfg)
+	motd := fmt.Sprintf("MCPE;%s;%d;%s;%d;%d", srv.cfg.MOTD, protocol.MinimumProtocol,
+		protocol.MinimumVersionNetwork, len(srv.listing.OnlinePlayers()), srv.cfg.MaxPlayers)
 
 	resp := make([]byte, 0, 35+len(motd))
 	resp = append(resp, IDUnconnectedPong)
@@ -202,39 +205,4 @@ func appendAddress(b []byte, addr *net.UDPAddr) []byte {
 		b = append(b, addr.IP.To16()...)
 	}
 	return appendUint16BE(b, uint16(addr.Port))
-}
-
-func buildMOTD(cfg interface {
-	GetMOTD() string
-	GetMaxPlayers() int
-	GetPort() int
-}) string {
-	// MCPE pong format: "MCPE;motd;protocol;version;playerCount;maxPlayers"
-	// Advertise the MINIMUM accepted protocol (110) so that ALL 1.1.x clients
-	// (protocols 110–113) can see the server as compatible or "slightly newer".
-	// Advertising a HIGH number makes older clients refuse with "Outdated Client".
-	return "MCPE;" + cfg.GetMOTD() + ";110;1.1.0;0;" + itoa(cfg.GetMaxPlayers())
-}
-
-func itoa(n int) string {
-	if n == 0 {
-		return "0"
-	}
-	neg := false
-	if n < 0 {
-		neg = true
-		n = -n
-	}
-	var b [20]byte
-	pos := 20
-	for n > 0 {
-		pos--
-		b[pos] = byte('0' + n%10)
-		n /= 10
-	}
-	if neg {
-		pos--
-		b[pos] = '-'
-	}
-	return string(b[pos:])
 }

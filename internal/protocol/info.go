@@ -4,6 +4,10 @@ package protocol
 // Source: ProtocolInfo.php → CURRENT_PROTOCOL = 113
 const CurrentProtocol = 113
 
+// 离线服务器列表沿用最早支持的客户端版本，避免旧客户端把它标为不兼容。
+const MinimumProtocol = 110
+const MinimumVersionNetwork = "1.1.0"
+
 // MinecraftVersionNetwork is the display version string for Bedrock 1.1.x.
 const MinecraftVersionNetwork = "1.1.7"
 
@@ -185,4 +189,4 @@ const (
 
 // AcceptedProtocols lists the protocol versions this server accepts.
 // Source: ProtocolInfo.php → ACCEPTED_PROTOCOLS = [110, 111, 112, 113]
-var AcceptedProtocols = []int{110, 111, 112, 113}
+var AcceptedProtocols = []int{MinimumProtocol, 111, 112, CurrentProtocol}

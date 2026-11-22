@@ -154,7 +154,7 @@ func New(cfg *config.Config) *Server {
 	if craftErr != nil {
 		logger.Fatal("server", "配方表加载失败: %v", craftErr)
 	}
-	srv.rakSrv = raknet.NewServer(cfg, srv.onNewRakSession)
+	srv.rakSrv = raknet.NewServer(cfg, srv.onNewRakSession, serverAdmin{srv: srv})
 	for _, nw := range worlds {
 		list, err := storage.LoadDroppedItems(cfg.DataDir, nw.Name)
 		if err != nil {

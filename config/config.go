@@ -17,7 +17,8 @@ type Config struct {
 	// ViewDistance 是客户端视距请求的上限（区块）。
 	ViewDistance int
 	// PVP 关闭后玩家之间不能互相攻击。
-	PVP bool
+	PVP   bool
+	Query bool
 	// Whitelist 是启动时的白名单开关；运行中由 /whitelist 改动，以 Server 里的值为准。
 	Whitelist         bool
 	SpawnX            int
@@ -55,6 +56,7 @@ func Default() *Config {
 		Difficulty:        1, // Easy
 		ViewDistance:      4,
 		PVP:               true,
+		Query:             true,
 		Whitelist:         false,
 		SpawnX:            0,
 		SpawnY:            5,

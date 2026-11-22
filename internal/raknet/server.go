@@ -1,7 +1,9 @@
 package raknet
 
 import (
+	crand "crypto/rand"
 	"fmt"
+	"go-mc-server/config"
 	"math/rand"
 	"net"
 	"sync"
@@ -10,12 +12,9 @@ import (
 	"go-mc-server/internal/logger"
 )
 
-// cfgIface allows the offline handler to read server config without importing
-// the config package and creating an import cycle.
-type cfgIface interface {
-	GetMOTD() string
-	GetMaxPlayers() int
-	GetPort() int
+type listing interface {
+	OnlinePlayers() []string
+	WhitelistEnabled() bool
 }
 
 // SessionHandler is called by the RakNet server whenever a new fully-connected
@@ -26,7 +25,9 @@ type SessionHandler func(sess *Session)
 // routes per-client datagrams to their Session objects.
 type Server struct {
 	conn     *net.UDPConn
-	cfg      cfgIface
+	cfg      *config.Config
+	listing  listing
+	queryKey [32]byte
 	serverID int64
 
 	mu       sync.RWMutex
@@ -36,13 +37,16 @@ type Server struct {
 }
 
 // NewServer creates a new RakNet Server but does not start listening.
-func NewServer(cfg cfgIface, onNewSession SessionHandler) *Server {
-	return &Server{
+func NewServer(cfg *config.Config, onNewSession SessionHandler, players listing) *Server {
+	var srv = &Server{
+		listing:      players,
 		cfg:          cfg,
 		serverID:     rand.New(rand.NewSource(time.Now().UnixNano())).Int63(),
 		sessions:     make(map[string]*Session),
 		onNewSession: onNewSession,
 	}
+	crand.Read(srv.queryKey[:])
+	return srv
 }
 
 // Listen starts the UDP server on the configured host:port.
@@ -85,6 +89,13 @@ func (srv *Server) handlePacket(data []byte, addr *net.UDPAddr) {
 
 	// Offline / handshake messages are handled before a session exists.
 	switch id {
+	case 0xfe:
+		if srv.cfg.Query {
+			if reply := srv.queryReply(data, addr.IP, time.Now()); reply != nil {
+				_, _ = srv.conn.WriteToUDP(reply, addr)
+			}
+		}
+		return
 	case IDUnconnectedPing, IDUnconnectedPingOpenConnections,
 		IDOpenConnectionRequest1, IDOpenConnectionRequest2:
 		srv.handleOfflinePacket(data, addr)
