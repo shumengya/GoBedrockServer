@@ -44,7 +44,7 @@
 | `0x1A` | [LevelEvent](../pocketmine服务器参考/src/pocketmine/network/mcpe/protocol/LevelEventPacket.php) | 世界事件，例如挖掘裂纹、粒子或传送音效 | [已注册](../internal/protocol/packets/level_event.go) |
 | `0x1B` | [BlockEvent](../pocketmine服务器参考/src/pocketmine/network/mcpe/protocol/BlockEventPacket.php) | 方块动画事件，如箱盖开合 | 未实现 |
 | `0x1C` | [EntityEvent](../pocketmine服务器参考/src/pocketmine/network/mcpe/protocol/EntityEventPacket.php) | 实体事件，如受伤、死亡和进食 | [已注册](../internal/protocol/packets/combat.go) |
-| `0x1D` | [MobEffect](../pocketmine服务器参考/src/pocketmine/network/mcpe/protocol/MobEffectPacket.php) | 增加、更新或移除状态效果 | 未实现 |
+| `0x1D` | [MobEffect](../pocketmine服务器参考/src/pocketmine/network/mcpe/protocol/MobEffectPacket.php) | 增加、更新或移除状态效果 | [已注册](../internal/protocol/packets/mob_effect.go) |
 | `0x1E` | [UpdateAttributes](../pocketmine服务器参考/src/pocketmine/network/mcpe/protocol/UpdateAttributesPacket.php) | 同步生命、饥饿等实体属性 | [已注册](../internal/protocol/packets/update_attributes.go) |
 
 ## 装备、交互与玩家状态
