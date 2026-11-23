@@ -71,6 +71,28 @@ func TestBoneMealGrowsWheat(test *testing.T) {
 	}
 }
 
+// 实际点击未成熟树苗从手持槽扣一份骨粉；有石头时树苗和地面原样保留，移开后才成树。
+func TestBoneMealGrowsSapling(test *testing.T) {
+	var fixture, player = placeTestSetup(test)
+	placeTestPut(test, fixture, 3, 63, 3, blockrule.BlockGrass, 0)
+	placeTestPut(test, fixture, 3, 64, 3, blockrule.BlockSapling, 5)
+	placeTestPut(test, fixture, 3, 66, 3, blockrule.BlockStone, 0)
+	var held = placeTestHold(player, 351, 15, 2)
+	placeTestUse(fixture, player, 3, 64, 3, blockrule.FaceUp, 0.5, held)
+	var root, meta = placeTestBlock(fixture, 3, 64, 3)
+	var soil, _ = placeTestBlock(fixture, 3, 63, 3)
+	if root != blockrule.BlockSapling || meta != 5 || soil != blockrule.BlockGrass || placeTestCount(player) != 1 {
+		test.Fatalf("期望受阻时保留树苗和草、剩一份骨粉，实际 %d:%d / %d / %d", root, meta, soil, placeTestCount(player))
+	}
+	placeTestPut(test, fixture, 3, 66, 3, blockrule.BlockAir, 0)
+	placeTestUse(fixture, player, 3, 64, 3, blockrule.FaceUp, 0.5, itemTestSlot(player))
+	root, meta = placeTestBlock(fixture, 3, 64, 3)
+	var crown, leafMeta = placeTestBlock(fixture, 3, 72, 3)
+	if root != blockrule.BlockWood2 || meta != 1 || crown != blockrule.BlockLeaves2 || leafMeta != 1 || placeTestCount(player) != 0 {
+		test.Fatalf("期望深色橡木和自然树冠、消耗最后一份骨粉，实际 %d:%d / %d:%d / %d", root, meta, crown, leafMeta, placeTestCount(player))
+	}
+}
+
 // 已经成熟的小麦不吃骨粉。
 func TestBoneMealKeptOnRipeWheat(test *testing.T) {
 	var fixture, player = placeTestSetup(test)

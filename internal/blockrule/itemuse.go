@@ -70,8 +70,11 @@ func useHoe(view View, req ItemUseRequest, id byte) (ItemUse, bool) {
 }
 
 // useBoneMeal 骨粉对作物和瓜茎：一次加 2~5 个阶段，最多到 7；对草方块：撒一把花草。
-// 树苗的骨粉催熟要等树的生成器，这里先不处理。已经成熟的作物不消耗骨粉（参考端会白白吃掉一个）。
+// 树苗不必先成熟，直接尝试长树；和参考端一样，空间不足也会消耗骨粉。
 func useBoneMeal(view View, target Pos, id byte, meta byte, random Random) (ItemUse, bool) {
+	if id == BlockSapling {
+		return ItemUse{Update: growSapling(view, target, meta&7, random), Consume: true}, true
+	}
 	if isCrop(id) {
 		if meta >= cropRipeStage {
 			return ItemUse{}, false

@@ -15,7 +15,7 @@ const columnRipeCount byte = 15
 // IsRandomTicked 这种方块要不要参与随机刻。服务端据此先筛一遍，大部分格子不用往下评估。
 func IsRandomTicked(id byte) bool {
 	switch id {
-	case BlockLeaves, BlockLeaves2, BlockWheat,
+	case BlockSapling, BlockLeaves, BlockLeaves2, BlockWheat,
 		BlockCarrot,
 		BlockPotato,
 		BlockBeetroot,
@@ -38,6 +38,14 @@ func OnRandomTick(view View, spot Pos, random Random) Update {
 	}
 	var id, meta = view.Block(spot)
 	switch id {
+	case BlockSapling:
+		if random.IntN(7) != 0 {
+			return Update{}
+		}
+		if meta&8 == 0 {
+			return Update{Changes: []Change{{Pos: spot, ID: id, Meta: meta | 8, Quiet: true}}}
+		}
+		return growSapling(view, spot, meta&7, random)
 	case BlockLeaves, BlockLeaves2:
 		return leafDecay(view, spot, id, meta)
 	case BlockWheat, BlockCarrot, BlockPotato, BlockBeetroot:

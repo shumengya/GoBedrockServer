@@ -86,7 +86,7 @@ func cropAtGround(id byte, meta byte) *mapView {
 }
 
 // 骨粉(染料 meta 15)对作物和瓜茎：一次加 2~5 个阶段，最多到 7，随机数是 0~3 对应加 2~5；
-// 已经成熟的不消耗骨粉。树苗的催熟要等树的生成器，先不处理。
+// 已经成熟的不消耗骨粉。
 func TestUseBoneMealOnCrops(test *testing.T) {
 	var cases []itemUseCase = []itemUseCase{
 		{
@@ -130,7 +130,6 @@ func TestUseBoneMealOnCrops(test *testing.T) {
 			Changes: []blockrule.Change{change(groundPos, blockrule.BlockPumpkinStem, 5)},
 		},
 		{Name: "成熟的小麦不消耗骨粉", View: cropAtGround(blockrule.BlockWheat, 7), ItemID: 351, Meta: 15, Script: []int{0}},
-		{Name: "树苗暂不处理", View: cropAtGround(blockrule.BlockSapling, 0), ItemID: 351, Meta: 15},
 		{Name: "石头没反应", View: cropAtGround(blockrule.BlockStone, 0), ItemID: 351, Meta: 15},
 		{Name: "红色染料(meta 1)不是骨粉", View: cropAtGround(blockrule.BlockWheat, 3), ItemID: 351, Meta: 1},
 	}
