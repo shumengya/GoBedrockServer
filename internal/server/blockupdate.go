@@ -32,7 +32,7 @@ func (srv *Server) settleBlocksLocked(worldName string, blockWorld *world.World,
 		var update blockrule.Update = blockrule.OnNeighborUpdate(view, pos)
 		var changeIndex int = 0
 		for changeIndex = 0; changeIndex < len(update.Changes); changeIndex++ {
-			if srv.applyChangeLocked(worldName, blockWorld, update.Changes[changeIndex]) {
+			if srv.applyChangeLocked(worldName, blockWorld, update.Changes[changeIndex]) && !update.Changes[changeIndex].Quiet {
 				queue = enqueueAround(queue, queued, update.Changes[changeIndex].Pos)
 			}
 		}

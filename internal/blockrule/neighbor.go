@@ -8,6 +8,9 @@ func OnNeighborChange(view View, pos Pos) []Change {
 		return nil
 	}
 	var id, meta = view.Block(pos)
+	if (id == BlockLeaves || id == BlockLeaves2) && meta&12 == 0 {
+		return []Change{{Pos: pos, ID: id, Meta: meta | 8, Quiet: true}}
+	}
 	if isFallable(id) {
 		return fallChange(view, pos)
 	}

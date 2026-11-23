@@ -26,6 +26,8 @@ type Change struct {
 	Drop bool
 	// Fall 为真表示原来的方块（沙子、沙砾）脚下空了，要变成一个下落中的方块实体，而不是直接消失。
 	Fall bool
+	// Quiet 只同步这一格的内部状态，不唤醒邻居（如树叶的待检查位）。
+	Quiet bool
 }
 
 // Place 照参考端 Level::useItemOn 的放置流程，算出这次放置要改哪些格子。
@@ -93,6 +95,9 @@ func Place(view View, req PlaceRequest) ([]Change, bool) {
 			return nil, false
 		}
 		meta = torch
+	}
+	if hand == BlockLeaves || hand == BlockLeaves2 {
+		meta = meta&3 | 4
 	}
 	return []Change{{Pos: spot, ID: hand, Meta: meta}}, true
 }

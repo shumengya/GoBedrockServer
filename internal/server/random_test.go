@@ -77,6 +77,36 @@ func TestRandomTickGrowsSugarcaneTaller(test *testing.T) {
 	}
 }
 
+// 有支撑时去掉标记不能再次唤醒自身；原木消失后，一片叶子腐烂才轮到它旁边的叶子。
+func TestLeafDecayCascade(test *testing.T) {
+	var fixture, _ = placeTestSetup(test)
+	var srv = fixture.srv
+	var wood = blockrule.Pos{PosX: 7, PosY: 5, PosZ: 8}
+	placeTestPut(test, fixture, 7, 5, 8, blockrule.BlockLog, 0)
+	placeTestPut(test, fixture, 8, 5, 8, blockrule.BlockLeaves, 8)
+	placeTestPut(test, fixture, 9, 5, 8, blockrule.BlockLeaves, 0)
+	var tick = func() {
+		var script = append(randomTestChunks(4), randomTestPicks([]int{8, 5, 8}, randomTickPicksPerSubChunk)...)
+		srv.tickRandomWith(&randomTestScript{values: script})
+	}
+	tick()
+	if _, meta := placeTestBlock(fixture, 8, 5, 8); meta != 0 {
+		test.Fatalf("期望有支撑的叶子清除标记，实际 %d", meta)
+	}
+	srv.blockMu.Lock()
+	srv.applyUpdateLocked("world", srv.world, blockrule.Update{Changes: []blockrule.Change{{Pos: wood, ID: blockrule.BlockAir}}})
+	srv.blockMu.Unlock()
+	if _, meta := placeTestBlock(fixture, 9, 5, 8); meta != 0 {
+		test.Fatalf("期望只标记相邻叶子，实际远端 meta %d", meta)
+	}
+	tick()
+	var first, _ = placeTestBlock(fixture, 8, 5, 8)
+	var second, meta = placeTestBlock(fixture, 9, 5, 8)
+	if first != blockrule.BlockAir || second != blockrule.BlockLeaves || meta != 8 {
+		test.Fatalf("期望首片腐烂、次片待查，实际 %d / %d:%d", first, second, meta)
+	}
+}
+
 // 没有玩家在线的世界不做随机刻。
 func TestRandomTickSkipsWorldWithoutPlayers(test *testing.T) {
 	var fixture *adminFixture = newAdminFixture(test)

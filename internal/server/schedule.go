@@ -77,7 +77,7 @@ func (srv *Server) applyUpdateLocked(worldName string, blockWorld *world.World, 
 	var index int = 0
 	for index = 0; index < len(update.Changes); index++ {
 		var edit blockrule.Change = update.Changes[index]
-		if srv.applyChangeLocked(worldName, blockWorld, edit) {
+		if srv.applyChangeLocked(worldName, blockWorld, edit) && !edit.Quiet {
 			origins = append(origins, edit.Pos)
 		}
 	}
