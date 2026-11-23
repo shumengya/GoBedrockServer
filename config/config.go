@@ -17,8 +17,9 @@ type Config struct {
 	// ViewDistance 是客户端视距请求的上限（区块）。
 	ViewDistance int
 	// PVP 关闭后玩家之间不能互相攻击。
-	PVP   bool
-	Query bool
+	PVP        bool
+	Query      bool
+	FireSpread bool
 	// Whitelist 是启动时的白名单开关；运行中由 /whitelist 改动，以 Server 里的值为准。
 	Whitelist         bool
 	SpawnX            int

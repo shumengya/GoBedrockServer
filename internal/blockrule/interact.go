@@ -76,12 +76,15 @@ func interactButton(pos Pos, id byte, meta byte) Update {
 	return Update{Changes: []Change{{Pos: pos, ID: id, Meta: meta | 8}}, Schedules: schedules}
 }
 
-// OnScheduled 在 Interact 等排过队的时间到了之后评估 pos：按钮弹回、液体流动。
-func OnScheduled(view View, pos Pos) Update {
+// OnScheduled 在到期时评估按钮、液体和火；火焰的空气蔓延概率取决于难度。
+func OnScheduled(view View, pos Pos, random Random, difficulty int32, fireSpread bool) Update {
 	if !view.Loaded(pos) {
 		return Update{}
 	}
 	var id, meta = view.Block(pos)
+	if id == BlockFire {
+		return fireScheduled(view, pos, meta, random, difficulty, fireSpread)
+	}
 	if isButton(id) && meta&8 != 0 {
 		return Update{Changes: []Change{{Pos: pos, ID: id, Meta: meta &^ 8}}}
 	}

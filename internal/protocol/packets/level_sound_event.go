@@ -2,8 +2,7 @@ package packets
 
 import "go-mc-server/internal/protocol"
 
-// LevelSoundEventPacket (0x19) is sent by the client for footstep / hit / place sounds.
-// We decode it so it is not logged as "未知包"; gameplay does not need it yet.
+// LevelSoundEventPacket（0x19）双向传输音效；服务端点火时使用 SoundIgnite。
 type LevelSoundEventPacket struct {
 	SoundID     byte
 	X, Y, Z     float32
@@ -21,6 +20,7 @@ const (
 	SoundJump      byte = 3
 	SoundBreak     byte = 4
 	SoundPlace     byte = 5
+	SoundIgnite    byte = 47
 )
 
 func SoundName(id byte) string {

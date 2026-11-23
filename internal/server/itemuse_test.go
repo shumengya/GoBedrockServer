@@ -93,6 +93,46 @@ func TestBoneMealGrowsSapling(test *testing.T) {
 	}
 }
 
+// 服务器从客户端点击的面求点火位置；火不能覆盖已有方块，成功时才用掉最后一点耐久。
+func TestFlintIgnitesAndBreaks(test *testing.T) {
+	var fixture, player = placeTestSetup(test)
+	placeTestPut(test, fixture, 3, 63, 3, blockrule.BlockStone, 0)
+	placeTestPut(test, fixture, 3, 64, 3, blockrule.BlockStone, 0)
+	var held = placeTestHold(player, 259, 64, 1)
+	placeTestUse(fixture, player, 3, 63, 3, blockrule.FaceUp, 1, held)
+	if itemTestSlot(player).Meta != 64 {
+		test.Fatalf("期望被阻挡时保留耐久，实际 %+v", itemTestSlot(player))
+	}
+	placeTestPut(test, fixture, 3, 64, 3, blockrule.BlockAir, 0)
+	placeTestUse(fixture, player, 3, 63, 3, blockrule.FaceUp, 1, held)
+	var flame, age = placeTestBlock(fixture, 3, 64, 3)
+	var due = fixture.srv.scheduled[scheduledKey{World: "world", Pos: blockrule.Pos{PosX: 3, PosY: 64, PosZ: 3}}]
+	if flame != blockrule.BlockFire || age != 0 || !itemTestSlot(player).IsAir() || due < 30 || due > 40 {
+		test.Fatalf("期望新火、打火石用尽、30–40 tick 后更新，实际 %d:%d / %+v / %d", flame, age, itemTestSlot(player), due)
+	}
+	fixture.srv.cfg.FireSpread = true
+	placeTestPut(test, fixture, 3, 64, 3, blockrule.BlockFire, 4)
+	fixture.srv.blockTick = due - 1
+	fixture.srv.tickScheduled()
+	flame, _ = placeTestBlock(fixture, 3, 64, 3)
+	if flame != blockrule.BlockAir {
+		test.Fatalf("期望启用蔓延后无燃料的老火熄灭，实际 %d", flame)
+	}
+}
+
+// 点在保护区外侧的木块上，若火实际落在保护区内，仍应保留空气和打火石耐久。
+func TestFlintChecksDestinationProtection(test *testing.T) {
+	var fixture, player = placeTestSetup(test)
+	fixture.srv.cfg.SpawnProtection = 2
+	placeTestPut(test, fixture, 3, 64, 0, blockrule.BlockLog, 0)
+	var held = placeTestHold(player, 259, 0, 1)
+	placeTestUse(fixture, player, 3, 64, 0, blockrule.FaceWest, 0.5, held)
+	var flame, _ = placeTestBlock(fixture, 2, 64, 0)
+	if flame != blockrule.BlockAir || itemTestSlot(player).Meta != 0 {
+		test.Fatalf("期望保护区内保持空气且打火石无磨损，实际 %d / %+v", flame, itemTestSlot(player))
+	}
+}
+
 // 已经成熟的小麦不吃骨粉。
 func TestBoneMealKeptOnRipeWheat(test *testing.T) {
 	var fixture, player = placeTestSetup(test)

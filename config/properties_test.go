@@ -95,6 +95,7 @@ func TestPropertiesTextRoundTrip(test *testing.T) {
 	source.Difficulty = 3
 	source.ViewDistance = 12
 	source.PVP = false
+	source.FireSpread = true
 	source.Whitelist = true
 	source.SpawnProtection = 3
 	var loaded *Config = Default()

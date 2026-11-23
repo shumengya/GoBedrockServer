@@ -321,5 +321,8 @@ func OnNeighborUpdate(view View, spot Pos) Update {
 	if !view.Loaded(spot) {
 		return Update{}
 	}
+	if IDAt(view, spot) == BlockFire {
+		return fireWake(view, spot, fireDelay+10)
+	}
 	return liquidNeighborUpdate(view, spot)
 }

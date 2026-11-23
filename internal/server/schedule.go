@@ -65,7 +65,7 @@ func (srv *Server) tickScheduled() {
 		delete(srv.scheduled, key)
 		processed++
 		var blockWorld *world.World = srv.worldByName(key.World)
-		var update blockrule.Update = blockrule.OnScheduled(peekView{target: blockWorld}, key.Pos)
+		var update blockrule.Update = blockrule.OnScheduled(peekView{target: blockWorld}, key.Pos, defaultDropRandom{}, srv.difficulty(), srv.cfg != nil && srv.cfg.FireSpread)
 		srv.applyUpdateLocked(key.World, blockWorld, update)
 	}
 }

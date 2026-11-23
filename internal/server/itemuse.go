@@ -36,6 +36,14 @@ func (srv *Server) useItemOnBlock(player *Player, pkt *packets.UseItemPacket, he
 		srv.notifyBlocked(player, "§c这里在出生点保护范围内，不能操作方块")
 		return true
 	}
+	if held.ID == blockrule.ItemFlintSteel {
+		var flame = result.Update.Changes[0].Pos
+		if srv.spawnProtected(player, flame.PosX, flame.PosZ) {
+			srv.notifyBlocked(player, "§c这里在出生点保护范围内，不能点火")
+			return true
+		}
+		srv.broadcastInWorld(worldName, &packets.LevelSoundEventPacket{SoundID: packets.SoundIgnite, X: float32(flame.PosX) + 0.5, Y: float32(flame.PosY) + 0.5, Z: float32(flame.PosZ) + 0.5, ExtraData: -1, Pitch: 1}, "")
+	}
 	srv.applyUpdateLocked(worldName, blockWorld, result.Update)
 	if result.Consume {
 		var slot, remaining, changed = player.ConsumeHeld(1)

@@ -15,7 +15,7 @@ const columnRipeCount byte = 15
 // IsRandomTicked 这种方块要不要参与随机刻。服务端据此先筛一遍，大部分格子不用往下评估。
 func IsRandomTicked(id byte) bool {
 	switch id {
-	case BlockSapling, BlockLeaves, BlockLeaves2, BlockWheat,
+	case BlockFire, BlockSapling, BlockLeaves, BlockLeaves2, BlockWheat,
 		BlockCarrot,
 		BlockPotato,
 		BlockBeetroot,
@@ -38,6 +38,8 @@ func OnRandomTick(view View, spot Pos, random Random) Update {
 	}
 	var id, meta = view.Block(spot)
 	switch id {
+	case BlockFire:
+		return fireWake(view, spot, fireDelay+random.IntN(11))
 	case BlockSapling:
 		if random.IntN(7) != 0 {
 			return Update{}

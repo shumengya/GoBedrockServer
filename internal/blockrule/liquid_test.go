@@ -41,7 +41,7 @@ func runLiquidCases(test *testing.T, cases []liquidCase) {
 	for index = 0; index < len(cases); index++ {
 		var item liquidCase = cases[index] // 闭包里用循环变量前先拷贝
 		test.Run(item.Name, func(sub *testing.T) {
-			var update blockrule.Update = blockrule.OnScheduled(item.View, abovePos)
+			var update blockrule.Update = blockrule.OnScheduled(item.View, abovePos, nil, 0, false)
 			if !slices.Equal(update.Changes, item.Changes) {
 				sub.Fatalf("改动期望 %+v，实际 %+v", item.Changes, update.Changes)
 			}
@@ -288,7 +288,7 @@ func TestOnNeighborUpdate(test *testing.T) {
 func TestLiquidScheduledAtWorldBottom(test *testing.T) {
 	var origin blockrule.Pos = posAt(0, 0, 0)
 	var view *mapView = newMapView().set(origin, blockrule.BlockStillWater, 0)
-	var update blockrule.Update = blockrule.OnScheduled(view, origin)
+	var update blockrule.Update = blockrule.OnScheduled(view, origin, nil, 0, false)
 	var expect []blockrule.Change = []blockrule.Change{
 		change(posAt(-1, 0, 0), blockrule.BlockStillWater, 1),
 		change(posAt(1, 0, 0), blockrule.BlockStillWater, 1),

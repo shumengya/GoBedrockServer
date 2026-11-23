@@ -256,7 +256,7 @@ func TestOnScheduled(test *testing.T) {
 	for index = 0; index < len(cases); index++ {
 		var item scheduledCase = cases[index]
 		test.Run(item.Name, func(sub *testing.T) {
-			var update blockrule.Update = blockrule.OnScheduled(item.View, abovePos)
+			var update blockrule.Update = blockrule.OnScheduled(item.View, abovePos, nil, 0, false)
 			if !slices.Equal(update.Changes, item.Expect) {
 				sub.Fatalf("改动期望 %+v，实际 %+v", item.Expect, update.Changes)
 			}

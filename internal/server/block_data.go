@@ -1,6 +1,7 @@
 package server
 
 import "go-mc-server/internal/protocol"
+import "go-mc-server/internal/blockrule"
 
 const toolNone int = 0
 const toolPickaxe int = 1
@@ -321,6 +322,7 @@ var toolInfoTable map[int32]toolInfo = map[int32]toolInfo{
 	itemGoldShovel:     {Kind: toolShovel, Tier: tierGold, Speed: 12, MaxDurability: 33, AttackDamage: 2},
 	itemGoldSword:      {Kind: toolSword, Tier: tierGold, Speed: 1.5, MaxDurability: 33, AttackDamage: 5},
 	itemShears:         {Kind: toolShears, Tier: tierNone, Speed: 1, MaxDurability: 239, AttackDamage: 1},
+	blockrule.ItemFlintSteel: {Kind: toolNone, Tier: tierNone, Speed: 1, MaxDurability: 65, AttackDamage: 1},
 	itemWoodenHoe:       {Kind: toolHoe, Tier: tierWood, Speed: 1, MaxDurability: 60, AttackDamage: 1},
 	itemStoneHoe:        {Kind: toolHoe, Tier: tierStone, Speed: 1, MaxDurability: 132, AttackDamage: 1},
 	itemIronHoe:         {Kind: toolHoe, Tier: tierIron, Speed: 1, MaxDurability: 251, AttackDamage: 1},

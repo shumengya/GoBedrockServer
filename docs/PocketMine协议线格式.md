@@ -46,6 +46,7 @@ RakNet 版本 **8** 与游戏协议号 **113** 位于不同层。离线握手依
 | 0A SetTime | S→C | 时间 VarInt，以 tick 为单位 |
 | 13 MovePlayer | C↔S | EntityId、位置 Vec3、pitch/yaw/bodyYaw 各 F32、模式 Byte、着地 Bool、骑乘实体 EntityId；传送模式才追加原因 LE32、物品 LE32 |
 | 16 UpdateBlock | S→C | BlockPos、方块 ID UVarInt、组合值 UVarInt（flags 左移 4 位，低 4 位为 meta） |
+| 19 LevelSoundEvent | C↔S | 声音编号 Byte、位置 Vec3、extraData VarInt、pitch VarInt、两个 Bool。点火用十进制 47（线上 `2F`），extraData=-1、pitch=1、两个标志均为假，所以位置之后是 `01 02 00 00`。客户端播放声音和地图上出现火焰是两件事，方块仍靠 `16 UpdateBlock` 同步 |
 | 1C EntityEvent | C↔S | EntityId、事件 Byte、附加值 VarInt；例如进食完成是事件 9，不是游戏包 09 |
 | 1D MobEffect | S→C | EntityId、操作 Byte（1 新增、2 修改、3 移除）、效果 ID VarInt、强度索引 VarInt、显示粒子 Bool、持续 tick 数 VarInt |
 | 1F MobEquipment | C↔S | EntityId、手持 Slot、背包网络槽 Byte、选中的快捷键 Byte、窗口 ID Byte。主手窗口为 0；网络槽 9–44 对应背包 0–35，255 解除绑定。例：网络槽 33、快捷键 3 表示第 4 个快捷键使用背包下标 24，物品仍在原格；切换时服务端从该格读取实际物品。|

@@ -45,6 +45,9 @@ const growGrassRadius int = 2
 // 调用方接着走放置流程；为 true 表示点击被消耗了。
 func UseItem(view View, req ItemUseRequest, random Random) (ItemUse, bool) {
 	var id, meta = view.Block(req.Target)
+	if req.ItemID == ItemFlintSteel {
+		return ignite(view, req, id, random)
+	}
 	if isHoe(req.ItemID) {
 		return useHoe(view, req, id)
 	}
