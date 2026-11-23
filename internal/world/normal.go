@@ -173,6 +173,7 @@ func (column *Chunk) fillNormal(seed, chunkX, chunkZ int32) {
 			column.heightMap[row*16+col] = column.skyHeight(col, 128, row)
 		}
 	}
+	column.fillLake(seed, chunkX, chunkZ)
 }
 
 // 仅新建主世界时选点；先查配置坐标，再向四周寻找露天陆地。
