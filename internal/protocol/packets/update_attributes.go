@@ -55,6 +55,7 @@ func DefaultAttributes() []Attribute {
 // PlayerVitals 是客户端 HUD 关心的几项体征。
 // 属性包是整包覆盖的，只发饥饿会把血量顶回默认值，所以血量也得一起带上。
 type PlayerVitals struct {
+	Absorption float32
 	Health     float32
 	Hunger     float32
 	Saturation float32
@@ -82,11 +83,15 @@ func HungerAttributes(vitals PlayerVitals) []Attribute {
 	return picked
 }
 
+func AbsorptionAttribute(value float32) Attribute {
+	return Attribute{Min: 0, Max: math.MaxFloat32, Value: value, DefaultValue: 0, Name: "minecraft:absorption"}
+}
+
 // PlayerAttributes 按 1.1 的属性顺序组装整包，顺序不能动：客户端可能按下标匹配。
 func PlayerAttributes(vitals PlayerVitals) []Attribute {
 	var fltMax float32 = math.MaxFloat32
 	return []Attribute{
-		{Min: 0, Max: fltMax, Value: 0, DefaultValue: 0, Name: "minecraft:absorption"},
+		AbsorptionAttribute(vitals.Absorption),
 		{Min: 0, Max: 20, Value: vitals.Saturation, DefaultValue: 20, Name: "minecraft:player.saturation"},
 		{Min: 0, Max: 5, Value: vitals.Exhaustion, DefaultValue: 0, Name: "minecraft:player.exhaustion"},
 		{Min: 0, Max: 1, Value: 0, DefaultValue: 0, Name: "minecraft:knockback_resistance"},

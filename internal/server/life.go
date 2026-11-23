@@ -21,6 +21,7 @@ const DamageCauseFire DamageCause = 6
 const DamageCauseCactus DamageCause = 7
 const DamageCausePlayer DamageCause = 8
 const DamageCauseStarvation DamageCause = 9
+const DamageCausePoison DamageCause = 10
 
 // lifeTick 区分每种环境伤害各自的节拍器，互不干扰。
 type lifeTick int
@@ -118,11 +119,15 @@ func (srv *Server) applyDamage(target *Player, amount float32, cause DamageCause
 			return false
 		}
 	}
+	var previousAbsorption float32 = target.vitals().Absorption
 	var applied, health, died = target.takeDamage(amount, cause, time.Now(), bypassCooldown)
 	if !applied {
 		return false
 	}
 	srv.sendHealth(target, health)
+	if previousAbsorption > 0 {
+		target.sendAbsorption()
+	}
 	// 受伤本身也耗疲劳（对齐参考端 CAUSE_DAMAGE）；死亡那一击玩家已是 Dead，会被忽略。
 	srv.exhaustPlayer(target, exhaustDamage)
 	srv.broadcastInWorld(
@@ -158,6 +163,7 @@ func (srv *Server) tickLife() {
 		srv.tickDrowning(player)
 		srv.applyEnvironment(player)
 		srv.tickFood(player)
+		srv.tickEffects(player)
 	}
 }
 

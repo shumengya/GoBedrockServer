@@ -3,6 +3,7 @@ package server
 import "time"
 
 import "go-mc-server/internal/protocol"
+import "go-mc-server/internal/storage"
 
 const maxPlayerHealth float32 = 20
 
@@ -35,6 +36,8 @@ const fireTicksOnLava int32 = 300
 const fireTicksStep int32 = 1
 
 type combatState struct {
+	Effects     map[int32]storage.EffectData
+	Absorption  float32
 	Health      float32
 	LastDamaged time.Time
 	Dead        bool
@@ -89,6 +92,21 @@ func (player *Player) takeDamage(amount float32, cause DamageCause, now time.Tim
 	if !bypassCooldown && !player.combat.LastDamaged.IsZero() && now.Sub(player.combat.LastDamaged) < damageCooldown {
 		return false, player.combat.Health, false
 	}
+	if player.combat.Effects[effectFireResistance].Duration > 0 && (cause == DamageCauseFire || cause == DamageCauseLava) {
+		return false, player.combat.Health, false
+	}
+	if effect := player.combat.Effects[effectResistance]; effect.Duration > 0 && cause != DamageCauseVoid {
+		amount *= max(0, 1-0.2*float32(effect.Amplifier+1))
+	}
+	if cause == DamageCausePoison {
+		amount = min(amount, max(0, player.combat.Health-1))
+	}
+	if amount <= 0 {
+		return false, player.combat.Health, false
+	}
+	var absorbed float32 = min(player.combat.Absorption, amount)
+	player.combat.Absorption -= absorbed
+	amount -= absorbed
 	player.combat.LastDamaged = now
 	player.combat.LastCause = cause
 	player.combat.Health = max(0, player.combat.Health-amount)

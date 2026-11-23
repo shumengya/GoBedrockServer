@@ -545,6 +545,7 @@ func (srv *Server) spawnPlayer(sess *network.Session) {
 	sess.SendPacket(&packets.SetSpawnPositionPacket{X: w.SpawnX, Y: w.SpawnY, Z: w.SpawnZ})
 	srv.sendWorldTimeTo(sess, w)
 	srv.sendVitals(p)
+	p.syncEffects(packets.MobEffectAdd)
 	srv.sendGameModeState(p)
 	srv.sendPlayerListOnJoin(p)
 	srv.sendCraftingData(sess)

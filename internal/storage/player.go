@@ -15,6 +15,9 @@ type SlotData struct {
 }
 
 type PlayerData struct {
+	Effects    map[int32]EffectData `json:"effects,omitempty"`
+	Absorption float32              `json:"absorption,omitempty"`
+
 	UUID      string     `json:"uuid"`
 	Name      string     `json:"name"`
 	XUID      string     `json:"xuid"`
@@ -44,6 +47,12 @@ type FoodData struct {
 	Saturation float32 `json:"saturation"`
 	Exhaustion float32 `json:"exhaustion"`
 	Timer      int32   `json:"timer"`
+}
+
+type EffectData struct {
+	ID        int32 `json:"id"`
+	Amplifier int32 `json:"amplifier"`
+	Duration  int32 `json:"duration"`
 }
 
 func LoadPlayer(dataDir, uuid string) (PlayerData, bool, error) {

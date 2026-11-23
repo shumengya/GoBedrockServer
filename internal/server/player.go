@@ -2,6 +2,7 @@ package server
 
 import (
 	"fmt"
+	"maps"
 	"math"
 	"sync"
 	"time"
@@ -169,6 +170,7 @@ func (p *Player) Snapshot(worldName string) storage.PlayerData {
 		wn = worldName
 	}
 	return storage.PlayerData{
+		Effects: maps.Clone(p.combat.Effects), Absorption: p.combat.Absorption,
 		UUID:       p.UUID,
 		Name:       p.Username,
 		XUID:       p.XUID,
@@ -234,6 +236,8 @@ func (p *Player) ApplySave(d storage.PlayerData) {
 	p.Armor = armorFromSlots(d.Armor)
 	p.food.restore(d.Food)
 	p.floating = storage.ItemsFromSlots(d.Floating, min(len(d.Floating), protocol.PlayerInventorySize))
+	p.combat.Effects = maps.Clone(d.Effects)
+	p.combat.Absorption = d.Absorption
 }
 
 func (p *Player) ApplyInventorySlot(slot int, item protocol.Item) bool {

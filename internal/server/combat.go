@@ -136,6 +136,11 @@ func (srv *Server) sendHealth(player *Player, health float32) {
 // killPlayer 死亡流程：广播死亡动画与死亡消息、掉落背包、发 Respawn 让客户端弹重生界面。
 // 真正的传送和回血在 respawnPlayer 里等客户端点了重生才做。
 func (srv *Server) killPlayer(victim *Player, killer *Player, cause DamageCause) {
+	victim.syncEffects(packets.MobEffectRemove)
+	victim.mu.Lock()
+	victim.combat.Effects = nil
+	victim.combat.Absorption = 0
+	victim.mu.Unlock()
 	var worldName string = srv.playerWorldName(victim)
 	srv.broadcastInWorld(
 		worldName,

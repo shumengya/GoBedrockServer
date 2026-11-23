@@ -10,6 +10,7 @@ func (player *Player) vitals() packets.PlayerVitals {
 	player.mu.RLock()
 	defer player.mu.RUnlock()
 	return packets.PlayerVitals{
+		Absorption: player.combat.Absorption,
 		Health:     player.combat.Health,
 		Hunger:     player.food.Food,
 		Saturation: player.food.Saturation,
