@@ -11,6 +11,7 @@ type SlotData struct {
 	ID    int32 `json:"id"`
 	Meta  int32 `json:"meta"`
 	Count byte  `json:"count"`
+	NBT []byte `json:"nbt,omitempty"`
 }
 
 type PlayerData struct {
@@ -26,6 +27,7 @@ type PlayerData struct {
 	Pitch     float32    `json:"pitch"`
 	GameMode  int32      `json:"gamemode"`
 	Inventory []SlotData `json:"inventory"`
+	Floating []SlotData `json:"floating,omitempty"`
 	HeldSlot  byte       `json:"heldSlot"`
 	Hotbar    []int32    `json:"hotbar,omitempty"`
 	// EnderChest 是玩家的末影箱，所有末影箱方块共用这一份。没用过的玩家没有这个字段。
@@ -80,7 +82,7 @@ func SavePlayer(dataDir string, d PlayerData) error {
 func SlotsFromItems(items []protocol.Item) []SlotData {
 	out := make([]SlotData, len(items))
 	for i, it := range items {
-		out[i] = SlotData{ID: it.ID, Meta: it.Meta, Count: it.Count}
+		out[i] = SlotData{ID: it.ID, Meta: it.Meta, Count: it.Count, NBT: it.NBT}
 	}
 	return out
 }
@@ -92,7 +94,7 @@ func ItemsFromSlots(slots []SlotData, n int) []protocol.Item {
 		if s.ID <= 0 || s.Count == 0 {
 			continue
 		}
-		out[i] = protocol.Item{ID: s.ID, Meta: s.Meta, Count: s.Count}
+		out[i] = protocol.Item{ID: s.ID, Meta: s.Meta, Count: s.Count, NBT: s.NBT}
 	}
 	return out
 }

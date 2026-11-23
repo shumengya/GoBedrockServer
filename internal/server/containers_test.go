@@ -21,6 +21,8 @@ func containerTestSlot(fixture *adminFixture, slot int) protocol.Item {
 }
 
 func containerTestWrite(fixture *adminFixture, player *Player, windowID byte, slot int32, item protocol.Item) {
+	// 这些用例专测窗口、位置和槽位规则；先给光标实际的物品，避免被来源校验提前拒绝。
+	player.floating.put(item)
 	fixture.srv.handleContainerWindowSlot(player, &packets.ContainerSetSlotPacket{WindowID: windowID, Slot: slot, Item: item})
 }
 

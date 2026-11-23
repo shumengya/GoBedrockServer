@@ -116,6 +116,7 @@ func (srv *Server) closeContainerViewers(worldName string, posX int32, posY int3
 		if session != nil {
 			session.SendPacket(&packets.ContainerClosePacket{WindowID: protocol.WindowContainer})
 		}
+		srv.returnFloating(viewers[index])
 	}
 }
 

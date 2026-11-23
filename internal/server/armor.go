@@ -144,15 +144,21 @@ func (srv *Server) wearArmorAfterHit(target *Player) {
 
 // handleArmorSlot 客户端往盔甲槽里放东西（或拿走）。放得进去才收：必须是这个槽该穿的盔甲，
 // 数量 1，损耗值在范围里；否则把服务端真实的这一格发回去，它本地多画出来的会消掉。
-// 损耗值只能卡范围，客户端谎报一件旧盔甲是全新的，目前拦不住，要等背包事务校验。
 func (srv *Server) handleArmorSlot(player *Player, pkt *packets.ContainerSetSlotPacket) {
 	if player.IsDead() || pkt.Slot < 0 || pkt.Slot >= protocol.ArmorSize {
 		return
 	}
 	var slot int = int(pkt.Slot)
-	if !armorAcceptable(slot, pkt.Item) {
+	player.mu.Lock()
+	var current = player.Armor[slot]
+	var valid = armorAcceptable(slot,pkt.Item) && player.exchangeSlotLocked(current,pkt.Item)
+	if valid {
+		player.Armor[slot] = pkt.Item
+		if pkt.Item.IsAir() { player.Armor[slot] = protocol.Air() }
+	}
+	player.mu.Unlock()
+	if !valid {
 		logger.Debug("server", "%s 盔甲槽 %d 拒绝了 %d:%d x%d", player.Username, slot, pkt.Item.ID, pkt.Item.Meta, pkt.Item.Count)
-		var current protocol.Item = player.armorSnapshot()[slot]
 		if player.Session != nil {
 			player.Session.SendPacket(&packets.ContainerSetSlotPacket{
 				WindowID: protocol.ContainerArmor,
@@ -162,10 +168,5 @@ func (srv *Server) handleArmorSlot(player *Player, pkt *packets.ContainerSetSlot
 		}
 		return
 	}
-	var accepted protocol.Item = pkt.Item
-	if accepted.IsAir() {
-		accepted = protocol.Air()
-	}
-	player.setArmorSlot(slot, accepted)
 	srv.broadcastArmor(player)
 }

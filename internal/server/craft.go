@@ -70,10 +70,6 @@ func (srv *Server) planCraft(player *Player, pkt *packets.CraftingEventPacket) (
 	if !found {
 		return crafting.Recipe{}, nil, "未知配方"
 	}
-	// 输入为空是 Win10 客户端的合成界面，材料在它本地的「悬浮背包」里，这版不支持。
-	if len(pkt.Input) == 0 {
-		return crafting.Recipe{}, nil, "输入为空"
-	}
 	if recipe.NeedsBench() && !srv.workbenchUsable(player) {
 		return crafting.Recipe{}, nil, "需要工作台"
 	}
@@ -92,6 +88,16 @@ func (srv *Server) planCraft(player *Player, pkt *packets.CraftingEventPacket) (
 func (srv *Server) handleCraftingEvent(sess *network.Session, pkt *packets.CraftingEventPacket) {
 	var player *Player = srv.playerBySession(sess)
 	if player == nil || sess.State() != network.StatePlaying || player.IsDead() {
+		return
+	}
+	if len(pkt.Input) == 0 {
+		book, err := crafting.Default()
+		if err == nil {
+			if recipe, found := book.Find(pkt.RecipeID); found && player.craftFloating(book, recipe, pkt.Output, srv.workbenchUsable(player)) {
+				return
+			}
+		}
+		srv.sendPlayerInventory(player)
 		return
 	}
 	var recipe, consumed, reason = srv.planCraft(player, pkt)

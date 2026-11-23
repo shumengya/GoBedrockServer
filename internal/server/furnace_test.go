@@ -150,7 +150,7 @@ type furnaceWriteCase struct {
 }
 
 // 玩家开着熔炉窗口，产物格只能取不能放：想多放、换成别的东西、往空格里放，都被拒绝，真实内容不变；
-// 取走一部分、整叠取走可以；输入格和燃料格先照旧让客户端随便放（防刷在背包事务校验那一步做）。
+// 取走一部分、整叠取走可以；取到光标上的矿石可以放入输入格。
 func TestFurnaceOutputSlotIsTakeOnly(test *testing.T) {
 	var current protocol.Item = protocol.Item{ID: 265, Count: 5}
 	var cases []furnaceWriteCase = []furnaceWriteCase{

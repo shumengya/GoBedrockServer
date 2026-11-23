@@ -165,7 +165,7 @@ func (srv *Server) openContainerTiles(player *Player) ([]world.Tile, bool) {
 }
 
 // handleContainerWindowSlot 处理客户端对容器窗口某一格的改动。
-// 目前容器里的内容还是信客户端报的（背包事务校验在后面单独做），但窗口必须真开着、人必须够得着。
+// 窗口必须开着且够得着；入槽物品和移出的物品在同次修改中与光标结算。
 func (srv *Server) handleContainerWindowSlot(player *Player, pkt *packets.ContainerSetSlotPacket) {
 	if pkt.WindowID != protocol.WindowContainer {
 		return
@@ -183,7 +183,14 @@ func (srv *Server) handleContainerWindowSlot(player *Player, pkt *packets.Contai
 	}
 	// 末影箱的格子在玩家自己身上，方块实体里没有，不走下面按方块实体找格子的路。
 	if halves[0].ID == world.TileEnderChest {
-		player.setEnderChestSlot(int(pkt.Slot), pkt.Item)
+		if pkt.Slot < 0 || pkt.Slot >= protocol.ChestSize { return }
+		player.mu.Lock()
+		if len(player.EnderChest) == 0 { player.EnderChest = make([]protocol.Item,protocol.ChestSize) }
+		var old = player.EnderChest[pkt.Slot]
+		var valid = player.exchangeSlotLocked(old,pkt.Item)
+		if valid { player.EnderChest[pkt.Slot] = pkt.Item }
+		player.mu.Unlock()
+		if !valid { srv.resendContainerSlot(player,int(pkt.Slot),old) }
 		return
 	}
 	var target, local, inRange = windowSlotTarget(halves, int(pkt.Slot))
@@ -192,7 +199,9 @@ func (srv *Server) handleContainerWindowSlot(player *Player, pkt *packets.Contai
 	}
 	var current protocol.Item = protocol.Air()
 	var rejected bool = false
-	srv.playerWorld(player).UpdateTile(target.X, target.Y, target.Z, func(live *world.Tile) bool {
+	var blockWorld = srv.playerWorld(player)
+	player.mu.Lock()
+	blockWorld.UpdateTile(target.X, target.Y, target.Z, func(live *world.Tile) bool {
 		if local >= len(live.Items) {
 			return false
 		}
@@ -203,9 +212,15 @@ func (srv *Server) handleContainerWindowSlot(player *Player, pkt *packets.Contai
 			rejected = true
 			return false
 		}
+		if !player.exchangeSlotLocked(live.Items[local],pkt.Item) {
+			current = live.Items[local]
+			rejected = true
+			return false
+		}
 		live.Items[local] = pkt.Item
 		return true
 	})
+	player.mu.Unlock()
 	if rejected {
 		srv.resendContainerSlot(player, int(pkt.Slot), current)
 	}
@@ -237,11 +252,13 @@ func (srv *Server) handleContainerClose(sess *network.Session, pkt *packets.Cont
 		return
 	}
 	p.mu.Lock()
-	if p.OpenWindow == pkt.WindowID || pkt.WindowID == 0 {
+	var closed = p.OpenWindow == pkt.WindowID || pkt.WindowID == 0
+	if closed {
 		p.OpenWindow = 0
 		p.OpenWindowType = 0
 	}
 	p.mu.Unlock()
+	if closed { srv.returnFloating(p) }
 }
 
 // containerViewers 此刻开着 (posX,posY,posZ) 这个容器窗口的玩家，按 UUID 排序。

@@ -515,8 +515,10 @@ func (srv *Server) spawnPlayer(sess *network.Session) {
 	}
 	p.Dimension = w.ProtocolDimension()
 	srv.mu.Lock()
+	// 客户端重连后鼠标和合成格为空，先将存档中的暂存物品还给玩家。
 	srv.players[sess.ClientUUID] = p
 	srv.mu.Unlock()
+	srv.returnFloating(p)
 	sess.SendPacket(&packets.StartGamePacket{
 		EntityUniqueID:          entityID,
 		EntityRuntimeID:         entityID,
@@ -769,7 +771,18 @@ func (srv *Server) handleContainerSetSlot(sess *network.Session, pkt *packets.Co
 		if slot < 0 {
 			return
 		}
-		p.ApplyInventorySlot(slot, pkt.Item)
+		p.mu.Lock()
+		var valid = slot < len(p.Inventory) && p.exchangeSlotLocked(p.Inventory[slot], pkt.Item)
+		if valid {
+			p.Inventory[slot] = pkt.Item
+			if slot == p.heldInventorySlotLocked() {
+				p.HeldItem = pkt.Item
+			}
+		}
+		p.mu.Unlock()
+		if !valid {
+			srv.sendPlayerInventory(p)
+		}
 		return
 	}
 	srv.handleContainerWindowSlot(p, pkt)
@@ -1004,22 +1017,11 @@ func (srv *Server) handleDropItem(sess *network.Session, pkt *packets.DropItemPa
 	if p == nil || sess.State() != network.StatePlaying {
 		return
 	}
-	p.mu.RLock()
-	gm := p.GameMode
-	p.mu.RUnlock()
-	if gm == int32(protocol.GameModeSpectator) {
+	if !p.payForDrop(item) {
+		srv.sendPlayerInventory(p)
 		return
 	}
-	if gm != int32(protocol.GameModeCreative) {
-		if !p.RemoveItem(item) {
-			logger.Debug("server", "%s 丢弃未从背包扣减 item=%d×%d（可能已由 SetSlot 扣除）", sess.Username, item.ID, item.Count)
-		} else {
-			srv.sendPlayerInventory(p)
-		}
-	} else {
-		// 创造不扣物品；回写背包，避免客户端热键栏被掏空。
-		srv.sendPlayerInventory(p)
-	}
+	srv.sendPlayerInventory(p)
 	x, y, z := p.Position()
 	yaw, pitch := p.Look()
 	sx, sy, sz := dropMotion(yaw, pitch)

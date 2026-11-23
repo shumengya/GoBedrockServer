@@ -361,6 +361,7 @@ func TestClientArmorSlotChange(test *testing.T) {
 			var fixture, viewer, wearer = armorTestDuel(sub)
 			var initial protocol.Item = protocol.Item{ID: 310, Count: 1}
 			wearer.setArmorSlot(armorSlotHelmet, initial)
+			wearer.floating.put(item.Item)
 			var wearerLog *sentLog = captureSent(wearer)
 			var viewerLog *sentLog = captureSent(viewer)
 			fixture.srv.handleContainerSetSlot(wearer.Session, &packets.ContainerSetSlotPacket{

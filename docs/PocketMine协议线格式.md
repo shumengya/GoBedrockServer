@@ -52,7 +52,7 @@ RakNet 版本 **8** 与游戏协议号 **113** 位于不同层。离线握手依
 | 23 UseItem | C→S | BlockPos、目标方块 ID UVarInt、面 VarInt、点击偏移 Vec3、玩家位置 Vec3、槽位 VarInt、手持 Slot |
 | 30 ContainerOpen | S→C | 窗口 ID Byte、窗口类型 Byte、BlockPos、关联实体 EntityId |
 | 32 ContainerSetSlot | C↔S | 窗口 ID Byte、槽位 VarInt、快捷栏槽位 VarInt、Slot、选择标志 Byte |
-| 36 CraftingEvent | C→S | 窗口 ID Byte、类型 VarInt、配方 UUID；先输入再输出，每组均为 UVarInt 数量 + Slot 列表。当前 Go 路径不接受空输入合成 |
+| 36 CraftingEvent | C→S | 窗口 ID Byte、类型 VarInt、配方 UUID；先输入再输出，每组均为 UVarInt 数量 + Slot 列表。桌面客户端可发长度为零的输入列表；材料来自此前的移槽记录 |
 | 38 BlockEntityData | C↔S | BlockPos，然后**剩余全部字节**为方块实体 NBT，没有额外 String 长度 |
 | 3A FullChunkData | S→C | 区块 X VarInt、区块 Z VarInt、列数据 String；这里的 X/Z 是区块坐标 |
 | 53 ResourcePackDataInfo | S→C | 包 ID String、单块上限 LE32、块数 LE32、压缩包大小 LE64、SHA-256 字节串 String |
@@ -60,6 +60,14 @@ RakNet 版本 **8** 与游戏协议号 **113** 位于不同层。离线握手依
 | 54 ResourcePackChunkData | S→C | 包 ID String、块索引 LE32、进度 LE64、**数据长度 LE32**、数据字节；这里不要用 String 读块数据 |
 
 **两种“区块”不同。** 地图列走 `3A` 和视距协商 `45/46`；资源包文件走 `53 → 55 → 54`。Go 能用空资源包列表完成登录，不等于已支持分块下载。要查其他包的完整字段和条件分支，从[索引](PocketMine协议索引.md)打开对应 PHP 包类，服务端发送看 `encode()`，服务端接收看 `decode()`；空方法不能证明该方向没有字段。
+
+### 桌面端如何合成四根木棍
+
+1. 玩家把两块木板从背包移进合成格。客户端发 `ContainerSetSlot`，报告原背包槽**移动后的内容**。服务端比较原槽与新槽，把取出的两块木板记在该玩家的悬浮背包中。
+2. 玩家拿起合成结果。客户端发 `CraftingEvent`，输入列表为空，输出是木棍。服务端优先查包里的 UUID；若客户端发了另一条已知配方的 UUID，再查具有相同产物、材料足够且当前工作台允许的配方。扣两块木板，把配方规定的四根木棍放入悬浮背包。
+3. 玩家把木棍放回背包。新的 `ContainerSetSlot` 增加目标格的数量，服务端同时扣掉悬浮背包中的四根木棍。若直接关窗，Go 端把剩余物品还回背包，放不下的掉在玩家所在位置。
+
+参考入口：[移槽差额](../pocketmine服务器参考/src/pocketmine/inventory/BaseTransaction.php)、[桌面合成与配方纠正](../pocketmine服务器参考/src/pocketmine/Player.php)、[Go 端悬浮背包](../internal/server/floating.go)。带输入格列表的合成仍走原有的格局匹配与背包扣料路径。
 
 ## 不经过游戏 Batch 的管理协议
 

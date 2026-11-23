@@ -61,6 +61,7 @@ type Player struct {
 	Inventory []protocol.Item
 	HeldSlot  byte
 	hotbar    []int32
+	floating  floatingInventory
 	HeldItem  protocol.Item
 
 	// EnderChest 玩家的末影箱，没用过时是 nil，用到时才补满 27 格。受 mu 保护。
@@ -180,6 +181,7 @@ func (p *Player) Snapshot(worldName string) storage.PlayerData {
 		Pitch:      p.Pitch,
 		GameMode:   p.GameMode,
 		Inventory:  storage.SlotsFromItems(p.Inventory),
+		Floating:   storage.SlotsFromItems(p.floating),
 		HeldSlot:   p.HeldSlot,
 		Hotbar:     append([]int32(nil), p.hotbar...),
 		EnderChest: enderChestSlots(p.EnderChest),
@@ -231,6 +233,7 @@ func (p *Player) ApplySave(d storage.PlayerData) {
 	}
 	p.Armor = armorFromSlots(d.Armor)
 	p.food.restore(d.Food)
+	p.floating = storage.ItemsFromSlots(d.Floating, min(len(d.Floating), protocol.PlayerInventorySize))
 }
 
 func (p *Player) ApplyInventorySlot(slot int, item protocol.Item) bool {
@@ -265,7 +268,7 @@ func (p *Player) addItemLocked(item protocol.Item) (leftover protocol.Item, ok b
 	// Merge into matching stacks first.
 	for i := 0; i < len(p.Inventory) && remain > 0; i++ {
 		slot := p.Inventory[i]
-		if slot.IsAir() || slot.ID != item.ID || slot.Meta != item.Meta {
+		if slot.IsAir() || !sameStack(slot, item) {
 			continue
 		}
 		if slot.Count >= limit {
@@ -320,7 +323,7 @@ func (p *Player) CanAddItem(item protocol.Item) bool {
 		slot := p.Inventory[i]
 		if slot.IsAir() {
 			space += int(limit)
-		} else if slot.ID == item.ID && slot.Meta == item.Meta && slot.Count < limit {
+		} else if sameStack(slot, item) && slot.Count < limit {
 			space += int(limit - slot.Count)
 		}
 		if space >= need {
@@ -464,7 +467,8 @@ func (p *Player) SyncInventory() {
 func (p *Player) takeAllItems() []protocol.Item {
 	p.mu.Lock()
 	defer p.mu.Unlock()
-	var dumped []protocol.Item = nil
+	var dumped []protocol.Item = p.floating
+	p.floating = nil
 	var index int = 0
 	for index = 0; index < len(p.Inventory); index++ {
 		var item protocol.Item = p.Inventory[index]
