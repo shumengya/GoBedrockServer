@@ -34,6 +34,7 @@ const (
 	BlockEndStone      = 121
 
 	GeneratorFlat   = "flat"
+	GeneratorNormal = "normal"
 	GeneratorSky    = "sky"
 	GeneratorOcean  = "ocean"
 	GeneratorNether = "nether"
@@ -256,8 +257,10 @@ func DecodeDisk(raw []byte) (*Chunk, error) {
 	return c, nil
 }
 
-func (c *Chunk) generate(gen string, cx, cz int32) {
+func (c *Chunk) generate(gen string, seed, cx, cz int32) {
 	switch gen {
+	case GeneratorNormal:
+		c.fillNormal(seed, cx, cz)
 	case GeneratorSky:
 		c.fillSky(cx, cz)
 	case GeneratorOcean:

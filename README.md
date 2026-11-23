@@ -38,7 +38,7 @@ go build -o go-mc-server.exe .
 
 **世界**
 - 多世界：`world`（超平坦）/ `sky` / `ocean` / `nether` / `end`，`/world` 切换
-- `level-seed` 设置新主世界种子（默认 `12345`）；不改已有存档，当前超平坦模板地形固定。
+- 新建自然地形主世界：在 `server.properties` 写 `level-type=normal`，用 `level-seed` 指定种子（默认 `12345`）。默认类型仍是 `flat`。已有世界沿用存档中的类型和种子；[生成规则](docs/世界生成.md)。
 - 区块按距离排队发送，视距上限可配置（`view-distance`，2–32）
 - 昼夜循环：每世界独立时钟，可 `/time` 调整或冻结；例如 `/time all set noon` 同时设置全部世界，`/time all query` 分世界查询
 - 存档：区块、玩家、世界元数据、方块实体、掉落物

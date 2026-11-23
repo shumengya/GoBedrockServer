@@ -44,6 +44,7 @@ RakNet 版本 **8** 与游戏协议号 **113** 位于不同层。离线握手依
 | 02 PlayStatus | S→C | 状态 BE32；登录成功与允许出生是两个不同阶段 |
 | 08 ResourcePackClientResponse | C→S | 状态 Byte、条目数 LE16、每个包 ID 为 String |
 | 0A SetTime | S→C | 时间 VarInt，以 tick 为单位 |
+| 0B StartGame | S→C | 世界部分先写种子、维度、生成器、世界游戏模式、难度（均 VarInt），再写出生点 BlockPos。生成器 1 表示无限地形、2 表示超平坦；维度是独立字段。[完整编码顺序](../internal/protocol/packets/start_game.go) |
 | 13 MovePlayer | C↔S | EntityId、位置 Vec3、pitch/yaw/bodyYaw 各 F32、模式 Byte、着地 Bool、骑乘实体 EntityId；传送模式才追加原因 LE32、物品 LE32 |
 | 16 UpdateBlock | S→C | BlockPos、方块 ID UVarInt、组合值 UVarInt（flags 左移 4 位，低 4 位为 meta） |
 | 19 LevelSoundEvent | C↔S | 声音编号 Byte、位置 Vec3、extraData VarInt、pitch VarInt、两个 Bool。点火用十进制 47（线上 `2F`），extraData=-1、pitch=1、两个标志均为假，所以位置之后是 `01 02 00 00`。客户端播放声音和地图上出现火焰是两件事，方块仍靠 `16 UpdateBlock` 同步 |

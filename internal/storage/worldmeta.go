@@ -3,6 +3,8 @@ package storage
 import (
 	"encoding/json"
 	"os"
+
+	"go-mc-server/internal/world"
 )
 
 type WorldMeta struct {
@@ -38,6 +40,9 @@ func LoadWorldMeta(path string, def WorldDefaults) (WorldMeta, error) {
 				Spawn:     [3]int32{def.SpawnX, def.SpawnY, def.SpawnZ},
 				Time:      0,
 				Generator: gen,
+			}
+			if gen == world.GeneratorNormal {
+				meta.Spawn = world.NormalSpawn(def.Seed, def.SpawnX, def.SpawnZ)
 			}
 			if err := SaveWorldMeta(path, meta); err != nil {
 				return WorldMeta{}, err

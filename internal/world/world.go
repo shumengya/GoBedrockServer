@@ -77,6 +77,7 @@ func (w *World) chunk(cx, cz int32) *Chunk {
 	var found *Chunk = w.chunks[key]
 	var store ColumnStore = w.store
 	var generator string = w.Generator
+	var seed = w.Seed
 	w.mu.RUnlock()
 	if found != nil {
 		return found
@@ -90,7 +91,7 @@ func (w *World) chunk(cx, cz int32) *Chunk {
 	}
 	if created == nil {
 		created = newChunk()
-		created.generate(generator, cx, cz)
+		created.generate(generator, seed, cx, cz)
 	}
 	w.mu.Lock()
 	defer w.mu.Unlock()

@@ -111,7 +111,7 @@ func New(cfg *config.Config) *Server {
 		SpawnX:    int32(cfg.SpawnX),
 		SpawnY:    int32(cfg.SpawnY),
 		SpawnZ:    int32(cfg.SpawnZ),
-		Generator: world.GeneratorFlat,
+		Generator: cfg.LevelType,
 	})
 	openTemplate := func(name, gen string) {
 		openWorld(storage.WorldDefaults{
