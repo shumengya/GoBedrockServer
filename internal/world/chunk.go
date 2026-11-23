@@ -261,6 +261,7 @@ func (c *Chunk) generate(gen string, seed, cx, cz int32) {
 	switch gen {
 	case GeneratorNormal:
 		c.fillNormal(seed, cx, cz)
+		c.fillNormalOres(seed, cx, cz)
 	case GeneratorSky:
 		c.fillSky(cx, cz)
 	case GeneratorOcean:
