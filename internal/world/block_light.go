@@ -55,7 +55,15 @@ func (column *Chunk) emittedAt(x, y, z int32) byte {
 	return section.blockLight[index] >> shift & 15
 }
 
-func (wave *lightWave) run() {
+func (wave *lightWave) enqueueSides(x, y, z int32) {
+	var idx int = 0
+	for idx = 0; idx < len(lightSteps); idx++ {
+		var off = lightSteps[idx]
+		wave.enqueue(x+off[0], y+off[1], z+off[2])
+	}
+}
+
+func (wave *lightWave) run(sky bool) {
 	var head int = 0
 	for head = 0; head < len(wave.queue); head++ {
 		var pos = wave.queue[head]
@@ -71,6 +79,12 @@ func (wave *lightWave) run() {
 			id = section.ids[subChunkIDIndex(int(x&15), int(y&15), int(z&15))]
 		}
 		var light = optics[id].emit
+		var xLocal, yLocal, zLocal = int(x & 15), int(y), int(z & 15)
+		var base byte = 0
+		if sky {
+			base = column.directSky(xLocal, yLocal, zLocal)
+			light = base
+		}
 		var cost = optics[id].filter
 		var idx int = 0
 		if light+cost < 16 {
@@ -84,29 +98,50 @@ func (wave *lightWave) run() {
 				if neighbor == nil {
 					continue
 				}
-				var value = neighbor.emittedAt(x+off[0], sideY, z+off[2])
+				var value byte = 0
+				if sky {
+					value = neighbor.rawSky(int((x+off[0])&15), int(sideY), int((z+off[2])&15))
+				} else {
+					value = neighbor.emittedAt(x+off[0], sideY, z+off[2])
+				}
 				if value > cost {
 					light = max(light, value-cost)
 				}
 			}
 		}
-		var old = column.emittedAt(x, y, z)
-		if old == light {
-			continue
-		}
-		section = column.subAt(int(y >> 4))
 		var index, shift = dataIndex(int(x&15), int(y&15), int(z&15))
-		section.blockLight[index] = (section.blockLight[index] &^ (15 << shift)) | light<<shift
-		if old == 0 {
-			section.litCells++
-		} else if light == 0 {
-			section.litCells--
+		if sky {
+			if light == base {
+				light = 0
+			}
+			var side = column.sideSky[y>>4]
+			if side == nil {
+				if light == 0 {
+					continue
+				}
+				side = new([2048]byte)
+				column.sideSky[y>>4] = side
+			}
+			if side[index]>>shift&15 == light {
+				continue
+			}
+			side[index] = side[index]&^(15<<shift) | light<<shift
+		} else {
+			var old = column.emittedAt(x, y, z)
+			if old == light {
+				continue
+			}
+			section = column.subAt(int(y >> 4))
+			section.blockLight[index] = section.blockLight[index]&^(15<<shift) | light<<shift
+			if old == 0 {
+				section.litCells++
+			} else if light == 0 {
+				section.litCells--
+			}
 		}
-		for idx = 0; idx < len(lightSteps); idx++ {
-			var off = lightSteps[idx]
-			wave.enqueue(x+off[0], y+off[1], z+off[2])
-		}
+		wave.enqueueSides(x, y, z)
 	}
+	wave.queue = wave.queue[:0]
 }
 
 // 列载入时用盘里的发光方块作种子。边界另一侧已加载时，沿边界接入邻列的已有亮度；
@@ -170,5 +205,8 @@ func (w *World) lightBoundary(cx, cz int32, column *Chunk, joining bool) {
 			}
 		}
 	}
-	wave.run()
+	wave.run(false)
+	if w.ProtocolDimension() == 0 {
+		wave.skyBoundary(cx, cz, column, joining)
+	}
 }

@@ -105,8 +105,10 @@ func (sc *SubChunk) networkSerialize(sky *[2048]byte) []byte {
 
 // Chunk is a mutable 16×256×16 column of sub-chunks.
 type Chunk struct {
-	mu        sync.Mutex
-	sub       [maxSubChunks]*SubChunk
+	mu  sync.Mutex
+	sub [maxSubChunks]*SubChunk
+	// 只在侧向天光超过本列直射值时存该格，空子区块无需为光创建方块数组。
+	sideSky   [maxSubChunks]*[2048]byte
 	heightMap [256]uint16
 	biomes    [256]byte
 	dirty     bool

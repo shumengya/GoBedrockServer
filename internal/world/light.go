@@ -66,7 +66,7 @@ func (column *Chunk) skySection(section int, sky *[2048]byte) {
 		for z = 0; z < 16; z++ {
 			var height = int(column.heightMap[z<<4|x])
 			var base = section << 4
-			if height >= base+30 {
+			if height >= base+30 && column.sideSky[section] == nil {
 				continue
 			}
 			for pair = 0; pair < 8; pair++ {
@@ -76,7 +76,7 @@ func (column *Chunk) skySection(section int, sky *[2048]byte) {
 					sky[index] = 0xff
 					continue
 				}
-				sky[index] = column.directSky(x, y, z) | column.directSky(x, y+1, z)<<4
+				sky[index] = column.rawSky(x, y, z) | column.rawSky(x, y+1, z)<<4
 			}
 		}
 	}
@@ -99,7 +99,7 @@ func (w *World) LightAt(x, y, z int32) (byte, byte) {
 			column.mu.Lock()
 			block = column.emittedAt(x, y, z)
 			if w.ProtocolDimension() == 0 {
-				sky = column.directSky(int(x&15), int(y), int(z&15))
+				sky = column.rawSky(int(x&15), int(y), int(z&15))
 			}
 			column.mu.Unlock()
 		}

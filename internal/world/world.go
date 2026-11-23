@@ -217,10 +217,32 @@ func (w *World) SetBlock(x, y, z int32, id, data byte) bool {
 		if section != nil {
 			previous = section.ids[subChunkIDIndex(lx, int(y&15), lz)]
 		}
+		var skyChanged = w.ProtocolDimension() == 0 && (optics[previous].filter != optics[id].filter || optics[previous].diffuse != optics[id].diffuse)
+		var before [256]byte
+		var low = max(0, int(y)-14)
+		var step int = low
+		if skyChanged {
+			if skyBarrier(previous) != skyBarrier(id) && int(y)+1 >= int(column.heightMap[lz<<4|lx]) {
+				low = 0
+			}
+			for step = low; step <= int(y); step++ {
+				before[step] = column.directSky(lx, step, lz)
+			}
+		}
 		column.setBlockLocked(lx, int(y), lz, id, data)
 		if optics[previous].emit != optics[id].emit || optics[previous].filter != optics[id].filter {
 			wave.enqueue(x, y, z)
-			wave.run()
+			wave.run(false)
+		}
+		if skyChanged {
+			wave.enqueue(x, y, z)
+			for step = low; step <= int(y); step++ {
+				if before[step] != column.directSky(lx, step, lz) {
+					wave.enqueue(x, int32(step), z)
+					wave.enqueueSides(x, int32(step), z)
+				}
+			}
+			wave.run(true)
 		}
 	})
 }
