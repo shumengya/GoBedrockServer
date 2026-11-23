@@ -65,7 +65,7 @@ func OnRandomTick(view RandomView, spot Pos, random Random) Update {
 		if meta&8 == 0 {
 			return Update{Changes: []Change{{Pos: spot, ID: id, Meta: meta | 8, Quiet: true}}}
 		}
-		return growSapling(view, spot, meta&7, random)
+		return GrowTree(view, spot, meta&7, random)
 	case BlockLeaves, BlockLeaves2:
 		return leafDecay(view, spot, id, meta)
 	case BlockWheat, BlockCarrot, BlockPotato, BlockBeetroot:

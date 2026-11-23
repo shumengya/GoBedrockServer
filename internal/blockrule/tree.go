@@ -41,7 +41,8 @@ func (tree *growingTree) put(pos Pos, id byte) {
 	tree.changes = append(tree.changes, edit)
 }
 
-func growSapling(view View, root Pos, species byte, random Random) Update {
+// GrowTree 为树苗生长和世界生成计算同一棵树的方块，不修改视图。
+func GrowTree(view View, root Pos, species byte, random Random) Update {
 	if root.PosY < 1 || !supportedAt(view, BlockSapling, root) || species > 5 {
 		return Update{}
 	}

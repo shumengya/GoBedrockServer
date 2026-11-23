@@ -3,6 +3,8 @@ package world
 import (
 	"math"
 	"math/rand/v2"
+
+	"go-mc-server/internal/blockrule"
 )
 
 const normalSea = 62
@@ -103,10 +105,14 @@ func groundMaterial(biome byte, depth int, submerged bool) byte {
 	return BlockStone
 }
 
+func terrainNoise(seed int32) (simplex, simplex, simplex) {
+	var random = rand.New(rand.NewPCG(uint64(uint32(seed)), 1))
+	return newSimplex(random), newSimplex(random), newSimplex(random)
+}
+
 // 气候和密度按世界坐标取样；边界网格与相邻区块共享同一组采样点。
 func (column *Chunk) fillNormal(seed, chunkX, chunkZ int32) {
-	var random = rand.New(rand.NewPCG(uint64(uint32(seed)), 1))
-	var base, temp, rain = newSimplex(random), newSimplex(random), newSimplex(random)
+	var base, temp, rain = terrainNoise(seed)
 	var baseX, baseZ = float64(chunkX) * 16, float64(chunkZ) * 16
 	var climate = [20][20]terrainBiome{}
 	var grid = [5][5][17]float64{}
@@ -171,6 +177,7 @@ func (column *Chunk) fillNormal(seed, chunkX, chunkZ int32) {
 
 // 仅新建主世界时选点；先查配置坐标，再向四周寻找露天陆地。
 func NormalSpawn(seed, originX, originZ int32) [3]int32 {
+	var fallback = [3]int32{originX, normalSea + 1, originZ}
 	var directions = [8][2]int32{{1, 0}, {0, 1}, {-1, 0}, {0, -1}, {1, 1}, {-1, 1}, {-1, -1}, {1, -1}}
 	var distance int32 = 0
 	for distance = 0; distance <= 512; distance = max(16, distance*2) {
@@ -183,17 +190,36 @@ func NormalSpawn(seed, originX, originZ int32) [3]int32 {
 			var posX, posZ = originX + directions[index][0]*distance, originZ + directions[index][1]*distance
 			var column = newChunk()
 			column.fillNormal(seed, posX>>4, posZ>>4)
-			var localX, localZ = int(posX & 15), int(posZ & 15)
-			var top = int(column.heightMap[localZ*16+localX]) - 1
-			var id, _ = column.GetBlock(localX, top, localZ)
-			if top >= normalSea && id != BlockStillWater {
-				var above, _ = column.GetBlock(localX, top+1, localZ)
+			var ground = column.heightMap
+			column.fillVegetation(seed, posX>>4, posZ>>4)
+			var start = int(posZ&15)*16 + int(posX&15)
+			if distance == 0 {
+				fallback[1] = int32(column.heightMap[start])
+				var above, _ = column.GetBlock(start&15, int(fallback[1]), start>>4)
 				if above != BlockAir {
-					top++
+					fallback[1]++
 				}
-				return [3]int32{posX, int32(top + 1), posZ}
+			}
+			var offset = 0
+			for offset = 0; offset < 256; offset++ {
+				var cell = (start + offset) & 255
+				var col, row = cell & 15, cell >> 4
+				var top = int(ground[cell]) - 1
+				var floor, _ = column.GetBlock(col, top, row)
+				if top < normalSea || (floor != blockrule.BlockSnowLayer && !blockrule.IsSolid(floor)) || floor == BlockLog {
+					continue
+				}
+				var feet, _ = column.GetBlock(col, top+1, row)
+				if feet == blockrule.BlockSnowLayer {
+					top++
+					feet, _ = column.GetBlock(col, top+1, row)
+				}
+				var head, _ = column.GetBlock(col, top+2, row)
+				if feet == BlockAir && head == BlockAir {
+					return [3]int32{posX&^15 + int32(col), int32(top + 1), posZ&^15 + int32(row)}
+				}
 			}
 		}
 	}
-	return [3]int32{originX, normalSea + 1, originZ}
+	return fallback
 }

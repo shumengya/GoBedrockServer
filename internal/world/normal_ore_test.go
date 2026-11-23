@@ -11,6 +11,7 @@ func TestNormalOres(test *testing.T) {
 	for chunkX = -3; chunkX <= 3; chunkX++ {
 		var base, decorated = newChunk(), newChunk()
 		base.fillNormal(-794, int32(chunkX), -1)
+		base.fillVegetation(-794, int32(chunkX), -1)
 		decorated.generate(GeneratorNormal, -794, int32(chunkX), -1)
 		for col = 0; col < 16; col++ {
 			for row = 0; row < 16; row++ {
