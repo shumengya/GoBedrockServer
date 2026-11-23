@@ -27,6 +27,7 @@ type PlayerData struct {
 	GameMode  int32      `json:"gamemode"`
 	Inventory []SlotData `json:"inventory"`
 	HeldSlot  byte       `json:"heldSlot"`
+	Hotbar    []int32    `json:"hotbar,omitempty"`
 	// EnderChest 是玩家的末影箱，所有末影箱方块共用这一份。没用过的玩家没有这个字段。
 	EnderChest []SlotData `json:"enderChest,omitempty"`
 	// Armor 身上的盔甲，4 格（头盔、胸甲、护腿、靴子），损耗值存在 meta 里。全空不写。

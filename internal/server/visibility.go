@@ -215,18 +215,7 @@ func (srv *Server) broadcastHeldItem(player *Player) {
 		return
 	}
 	player.mu.RLock()
-	var held byte = player.HeldSlot
-	var netSlot byte = held
-	if held < protocol.PlayerHotbarSize {
-		netSlot = held + protocol.PlayerHotbarSize
-	}
-	var pkt *packets.MobEquipmentPacket = &packets.MobEquipmentPacket{
-		EntityRuntimeID: player.EntityRuntimeID,
-		Item:            player.HeldItem,
-		InventorySlot:   netSlot,
-		HotbarSlot:      held,
-		WindowID:        0,
-	}
+	var pkt = player.equipmentLocked()
 	player.mu.RUnlock()
 	sendToPlayers(srv.viewersOf(player), pkt)
 }

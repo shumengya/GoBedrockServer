@@ -60,6 +60,7 @@ type Player struct {
 
 	Inventory []protocol.Item
 	HeldSlot  byte
+	hotbar    []int32
 	HeldItem  protocol.Item
 
 	// EnderChest 玩家的末影箱，没用过时是 nil，用到时才补满 27 格。受 mu 保护。
@@ -180,6 +181,7 @@ func (p *Player) Snapshot(worldName string) storage.PlayerData {
 		GameMode:   p.GameMode,
 		Inventory:  storage.SlotsFromItems(p.Inventory),
 		HeldSlot:   p.HeldSlot,
+		Hotbar:     append([]int32(nil), p.hotbar...),
 		EnderChest: enderChestSlots(p.EnderChest),
 		Armor:      armorToSlots(p.Armor),
 		Food:       p.food.save(),
@@ -214,9 +216,15 @@ func (p *Player) ApplySave(d storage.PlayerData) {
 	if len(d.Inventory) > 0 {
 		p.Inventory = storage.ItemsFromSlots(d.Inventory, protocol.PlayerInventorySize)
 	}
-	p.HeldSlot = d.HeldSlot
-	if int(p.HeldSlot) < len(p.Inventory) {
-		p.HeldItem = p.Inventory[p.HeldSlot]
+	if d.HeldSlot < protocol.PlayerHotbarSize {
+		p.HeldSlot = d.HeldSlot
+	}
+	if len(d.Hotbar) == protocol.PlayerHotbarSize {
+		p.hotbar = append([]int32(nil), d.Hotbar...)
+	}
+	p.HeldItem = protocol.Air()
+	if slot := p.heldInventorySlotLocked(); slot >= 0 && slot < len(p.Inventory) {
+		p.HeldItem = p.Inventory[slot]
 	}
 	if len(d.EnderChest) > 0 {
 		p.EnderChest = storage.ItemsFromSlots(d.EnderChest, protocol.ChestSize)
@@ -232,7 +240,7 @@ func (p *Player) ApplyInventorySlot(slot int, item protocol.Item) bool {
 		return false
 	}
 	p.Inventory[slot] = item
-	if slot == int(p.HeldSlot) {
+	if slot == p.heldInventorySlotLocked() {
 		p.HeldItem = item
 	}
 	return true
@@ -270,7 +278,7 @@ func (p *Player) addItemLocked(item protocol.Item) (leftover protocol.Item, ok b
 		}
 		slot.Count += add
 		p.Inventory[i] = slot
-		if i == int(p.HeldSlot) {
+		if i == p.heldInventorySlotLocked() {
 			p.HeldItem = slot
 		}
 		remain -= add
@@ -284,7 +292,7 @@ func (p *Player) addItemLocked(item protocol.Item) (leftover protocol.Item, ok b
 		var placeCount byte = min(remain, limit)
 		placed := protocol.Item{ID: item.ID, Meta: item.Meta, Count: placeCount, NBT: item.NBT}
 		p.Inventory[i] = placed
-		if i == int(p.HeldSlot) {
+		if i == p.heldInventorySlotLocked() {
 			p.HeldItem = placed
 		}
 		remain -= placeCount
@@ -350,7 +358,7 @@ func (p *Player) RemoveItem(item protocol.Item) bool {
 	if countMatching(p.Inventory, item.ID, item.Meta) < need {
 		return false
 	}
-	held := int(p.HeldSlot)
+	held := p.heldInventorySlotLocked()
 	need = takeMatching(p, held, item.ID, item.Meta, need)
 	for i := 0; i < len(p.Inventory) && need > 0; i++ {
 		if i == held {
@@ -390,7 +398,7 @@ func takeMatching(p *Player, slot int, id, meta int32, need int) int {
 		it.Count -= byte(take)
 	}
 	p.Inventory[slot] = it
-	if slot == int(p.HeldSlot) {
+	if slot == p.heldInventorySlotLocked() {
 		p.HeldItem = it
 	}
 	return need - take
@@ -400,7 +408,7 @@ func takeMatching(p *Player, slot int, id, meta int32, need int) int {
 func (p *Player) ConsumeHeld(n byte) (slot int, item protocol.Item, changed bool) {
 	p.mu.Lock()
 	defer p.mu.Unlock()
-	slot = int(p.HeldSlot)
+	slot = p.heldInventorySlotLocked()
 	if p.GameMode == int32(protocol.GameModeCreative) {
 		return slot, p.HeldItem, false
 	}
@@ -438,6 +446,7 @@ func (p *Player) SyncInventory() {
 	var sess *network.Session = p.Session
 	var raw []protocol.Item = make([]protocol.Item, len(p.Inventory))
 	copy(raw, p.Inventory)
+	var mapping = p.hotbarSnapshotLocked()
 	p.mu.RUnlock()
 	if sess == nil {
 		return
@@ -445,7 +454,8 @@ func (p *Player) SyncInventory() {
 	sess.SendPacket(&packets.ContainerSetContentPacket{
 		WindowID:  0,
 		TargetEID: p.EntityRuntimeID,
-		Slots:     raw,
+		Slots:     protocol.NetworkPlayerInventory(raw),
+		Hotbar:    mapping,
 	})
 }
 
@@ -472,7 +482,7 @@ func (p *Player) takeAllItems() []protocol.Item {
 		dumped = append(dumped, p.Armor[slot])
 		p.Armor[slot] = protocol.Air()
 	}
-	p.HeldItem = p.Inventory[p.HeldSlot]
+	p.HeldItem = protocol.Air()
 	return dumped
 }
 

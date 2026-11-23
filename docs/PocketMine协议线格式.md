@@ -48,6 +48,7 @@ RakNet 版本 **8** 与游戏协议号 **113** 位于不同层。离线握手依
 | 16 UpdateBlock | S→C | BlockPos、方块 ID UVarInt、组合值 UVarInt（flags 左移 4 位，低 4 位为 meta） |
 | 1C EntityEvent | C↔S | EntityId、事件 Byte、附加值 VarInt；例如进食完成是事件 9，不是游戏包 09 |
 | 1D MobEffect | S→C | EntityId、操作 Byte（1 新增、2 修改、3 移除）、效果 ID VarInt、强度索引 VarInt、显示粒子 Bool、持续 tick 数 VarInt |
+| 1F MobEquipment | C↔S | EntityId、手持 Slot、背包网络槽 Byte、选中的快捷键 Byte、窗口 ID Byte。主手窗口为 0；网络槽 9–44 对应背包 0–35，255 解除绑定。例：网络槽 33、快捷键 3 表示第 4 个快捷键使用背包下标 24，物品仍在原格；切换时服务端从该格读取实际物品。|
 | 23 UseItem | C→S | BlockPos、目标方块 ID UVarInt、面 VarInt、点击偏移 Vec3、玩家位置 Vec3、槽位 VarInt、手持 Slot |
 | 30 ContainerOpen | S→C | 窗口 ID Byte、窗口类型 Byte、BlockPos、关联实体 EntityId |
 | 32 ContainerSetSlot | C↔S | 窗口 ID Byte、槽位 VarInt、快捷栏槽位 VarInt、Slot、选择标志 Byte |

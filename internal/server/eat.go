@@ -52,7 +52,7 @@ func consumeOne(item protocol.Item) protocol.Item {
 func (player *Player) eatHeld(now time.Time) (eatOutcome, string) {
 	player.mu.Lock()
 	defer player.mu.Unlock()
-	var slot int = int(player.HeldSlot)
+	var slot int = player.heldInventorySlotLocked()
 	if slot < 0 || slot >= len(player.Inventory) {
 		return eatOutcome{}, "手持槽位无效"
 	}

@@ -35,7 +35,7 @@ func (p *Player) removeMatchingLocked(id int32, meta int32, count int) bool {
 	if countMatching(p.Inventory, id, meta) < count {
 		return false
 	}
-	var held int = int(p.HeldSlot)
+	var held int = p.heldInventorySlotLocked()
 	var need int = takeMatching(p, held, id, meta, count)
 	var index int = 0
 	for index = 0; index < len(p.Inventory) && need > 0; index++ {

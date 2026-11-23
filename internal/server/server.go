@@ -739,26 +739,13 @@ func (srv *Server) handleMobEquipment(sess *network.Session, pkt *packets.MobEqu
 	srv.mu.RLock()
 	p := srv.players[sess.ClientUUID]
 	srv.mu.RUnlock()
-	if p == nil {
+	if p == nil || sess.State() != network.StatePlaying || pkt.WindowID != 0 {
 		return
 	}
-	if pkt.Item.Count > item.StackLimit(pkt.Item.ID) {
+	if !p.selectHotbar(pkt.HotbarSlot, pkt.InventorySlot) {
 		srv.sendPlayerInventory(p)
 		return
 	}
-	p.mu.Lock()
-	if pkt.HotbarSlot < 9 {
-		p.HeldSlot = pkt.HotbarSlot
-	}
-	p.HeldItem = pkt.Item
-	slot := protocol.InventorySlotFromEquipment(pkt.InventorySlot)
-	if slot < 0 {
-		slot = int(pkt.HotbarSlot)
-	}
-	if slot >= 0 && slot < len(p.Inventory) {
-		p.Inventory[slot] = pkt.Item
-	}
-	p.mu.Unlock()
 	srv.broadcastHeldItem(p)
 }
 
@@ -794,8 +781,8 @@ func (srv *Server) sendPlayerInventory(p *Player) {
 	}
 	p.mu.RLock()
 	inv := append([]protocol.Item(nil), p.Inventory...)
-	held := p.HeldSlot
-	heldItem := p.HeldItem
+	mapping := p.hotbarSnapshotLocked()
+	equipment := p.equipmentLocked()
 	eid := p.EntityRuntimeID
 	sess := p.Session
 	p.mu.RUnlock()
@@ -803,19 +790,9 @@ func (srv *Server) sendPlayerInventory(p *Player) {
 		WindowID:  protocol.ContainerInventory,
 		TargetEID: eid,
 		Slots:     protocol.NetworkPlayerInventory(inv),
-		Hotbar:    protocol.DefaultHotbarMapping(),
+		Hotbar:    mapping,
 	})
-	netSlot := held
-	if held < protocol.PlayerHotbarSize {
-		netSlot = held + protocol.PlayerHotbarSize
-	}
-	sess.SendPacket(&packets.MobEquipmentPacket{
-		EntityRuntimeID: eid,
-		Item:            heldItem,
-		InventorySlot:   netSlot,
-		HotbarSlot:      held,
-		WindowID:        0,
-	})
+	sess.SendPacket(equipment)
 }
 
 func (srv *Server) sendInventorySlot(p *Player, slot int, item protocol.Item) {

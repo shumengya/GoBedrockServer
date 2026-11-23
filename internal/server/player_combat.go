@@ -166,7 +166,7 @@ func (player *Player) Revive() {
 func (player *Player) DamageHeldTool(amount int32) (slot int, item protocol.Item, changed bool) {
 	player.mu.Lock()
 	defer player.mu.Unlock()
-	slot = int(player.HeldSlot)
+	slot = player.heldInventorySlotLocked()
 	if amount <= 0 || player.GameMode == int32(protocol.GameModeCreative) {
 		return slot, player.HeldItem, false
 	}
