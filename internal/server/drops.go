@@ -201,6 +201,10 @@ func blockDrops(id byte, meta byte, held protocol.Item, source dropRandom) []pro
 		return []protocol.Item{dropOf(410, 0, 1)}
 	case 140: // 花盆
 		return []protocol.Item{dropOf(390, 0, 1)}
+	case 199: // 展示框物品 ID 与方块 ID 不同
+		return []protocol.Item{dropOf(389, 0, 1)}
+	case 144: // 头颅种类要从方块实体中读取
+		return nil
 	case 59: // 小麦：成熟掉小麦 + 0~3 种子，未成熟只掉 1 种子
 		if data >= 7 {
 			var drops []protocol.Item = []protocol.Item{dropOf(296, 0, 1)}

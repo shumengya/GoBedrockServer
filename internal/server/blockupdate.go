@@ -75,14 +75,14 @@ func (srv *Server) applyChangeLocked(worldName string, blockWorld *world.World, 
 	if !blockWorld.SetBlock(posX, posY, posZ, edit.ID, edit.Meta) {
 		return false
 	}
-	var bedTile world.Tile = world.Tile{}
+	var removed world.Tile = world.Tile{}
 	var isBed bool = false
 	if edit.ID == blockrule.BlockAir {
 		var tile, hasTile = blockWorld.RemoveTile(posX, posY, posZ)
 		if hasTile {
 			srv.releaseTile(worldName, tile)
 		}
-		bedTile = tile
+		removed = tile
 		isBed = hasTile && tile.ID == world.TileBed
 	}
 	if edit.Drop {
@@ -97,7 +97,10 @@ func (srv *Server) applyChangeLocked(worldName string, blockWorld *world.World, 
 		// 自己掉下来的方块按空手结算掉落，不受任何玩家手持工具影响。
 		var drops []protocol.Item = blockDrops(oldID, oldMeta, protocol.Air(), defaultDropRandom{})
 		if isBed {
-			drops = withBedColor(drops, bedTile.Color)
+			drops = withBedColor(drops, removed.Color)
+		}
+		if oldID == world.BlockSkull && removed.ID == world.TileSkull {
+			drops = []protocol.Item{{ID: 397, Meta: int32(removed.SkullType), Count: 1}}
 		}
 		var dropIndex int = 0
 		for dropIndex = 0; dropIndex < len(drops); dropIndex++ {

@@ -17,6 +17,10 @@ const (
 	IDFurnace    = "Furnace"
 	IDSign       = "Sign"
 	IDEnderChest = "EnderChest"
+	IDFlowerPot  = "FlowerPot"
+	IDSkull      = "Skull"
+	IDItemFrame  = "ItemFrame"
+	IDHopper     = "Hopper"
 )
 
 type Writer struct {
@@ -53,6 +57,21 @@ func (w *Writer) Byte(name string, v byte) {
 func (w *Writer) stringRaw(v string) {
 	w.s.WriteUnsignedVarInt(uint32(len(v)))
 	w.s.WriteBytes([]byte(v))
+}
+
+// Float 写一个 32 位浮点。网络格式里浮点也是小端原样写，不走变长编码。
+func (w *Writer) Float(name string, v float32) {
+	_ = w.s.WriteByte(TagFloat)
+	w.stringRaw(name)
+	w.s.WriteLFloat(v)
+}
+
+// Compound 开一个嵌套的复合标签，里面的写法和顶层一样，函数返回时自动收尾。
+func (w *Writer) Compound(name string, write func(w *Writer)) {
+	_ = w.s.WriteByte(TagCompound)
+	w.stringRaw(name)
+	write(w)
+	_ = w.s.WriteByte(TagEnd)
 }
 
 func SpawnChest(x, y, z int32) []byte {
@@ -122,6 +141,62 @@ func SpawnSign(x, y, z int32, lines [4]string) []byte {
 		w.String("Text2", lines[1])
 		w.String("Text3", lines[2])
 		w.String("Text4", lines[3])
+		w.Int("x", x)
+		w.Int("y", y)
+		w.Int("z", z)
+	})
+}
+
+// SpawnFlowerPot 花盆里种的东西。里面空着时 item 是 0，客户端画空花盆。
+// item 是短整型、mData 是整型，这两个类型参考端就是这么写的，别改。
+func SpawnFlowerPot(x, y, z int32, itemID int16, itemMeta int32) []byte {
+	return WriteNetworkCompound("", func(w *Writer) {
+		w.String("id", IDFlowerPot)
+		w.Int("x", x)
+		w.Int("y", y)
+		w.Int("z", z)
+		w.Short("item", itemID)
+		w.Int("mData", itemMeta)
+	})
+}
+
+// SpawnSkull 头颅：种类和朝上的那一格的旋转角度。朝侧面放时 Rot 恒为 0，靠方块 meta 定朝向。
+func SpawnSkull(x, y, z int32, skullType byte, rot byte) []byte {
+	return WriteNetworkCompound("", func(w *Writer) {
+		w.String("id", IDSkull)
+		w.Byte("SkullType", skullType)
+		w.Byte("Rot", rot)
+		w.Int("x", x)
+		w.Int("y", y)
+		w.Int("z", z)
+	})
+}
+
+// SpawnItemFrame 物品展示框：里面那张画的旋转角，以及画本身。空框不写 Item。
+func SpawnItemFrame(x, y, z int32, rotation byte, item protocol.Item) []byte {
+	return WriteNetworkCompound("", func(w *Writer) {
+		w.String("id", IDItemFrame)
+		w.Int("x", x)
+		w.Int("y", y)
+		w.Int("z", z)
+		w.Float("ItemDropChance", 1)
+		w.Byte("ItemRotation", rotation)
+		if item.IsAir() {
+			return
+		}
+		w.Compound("Item", func(itemWriter *Writer) {
+			itemWriter.Short("id", int16(item.ID))
+			itemWriter.Byte("Count", item.Count)
+			itemWriter.Short("Damage", int16(item.Meta))
+			itemWriter.s.WriteBytes(frameItemTag(item.NBT))
+		})
+	})
+}
+
+// SpawnHopper 漏斗的方块实体只需要坐标，格子内容客户端不画。
+func SpawnHopper(x, y, z int32) []byte {
+	return WriteNetworkCompound("", func(w *Writer) {
+		w.String("id", IDHopper)
 		w.Int("x", x)
 		w.Int("y", y)
 		w.Int("z", z)

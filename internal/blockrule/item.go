@@ -16,6 +16,10 @@ const itemJungleDoor int32 = 429
 const itemAcaciaDoor int32 = 430
 const itemDarkOakDoor int32 = 431
 const itemBed int32 = 355
+const itemItemFrame int32 = 389
+const itemFlowerPot int32 = 390
+const itemMobHead int32 = 397
+const itemHopper int32 = 410
 
 // BlockForItem 返回手持物放下去会变成的方块 ID。
 // ID 小于 256 的物品本身就是方块；种子、门、床、甘蔗这类物品的 ID 和方块不同，查表。
@@ -60,6 +64,14 @@ func BlockForItem(itemID int32) (byte, bool) {
 		return BlockBed, true
 	case itemSign:
 		return BlockSignPost, true
+	case itemItemFrame:
+		return BlockItemFrame, true
+	case itemFlowerPot:
+		return BlockFlowerPot, true
+	case itemMobHead:
+		return BlockSkull, true
+	case itemHopper:
+		return BlockHopper, true
 	}
 	return BlockAir, false
 }

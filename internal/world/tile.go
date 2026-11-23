@@ -14,8 +14,13 @@ const (
 	TileFurnace    = nbt.IDFurnace
 	TileSign       = nbt.IDSign
 	TileEnderChest = nbt.IDEnderChest
+	TileFlowerPot  = nbt.IDFlowerPot
+	TileSkull      = nbt.IDSkull
+	TileItemFrame  = nbt.IDItemFrame
+	TileHopper     = nbt.IDHopper
 	FurnaceSize    = protocol.FurnaceSize
 	ChestSize      = protocol.ChestSize
+	HopperSize     = protocol.HopperSize
 )
 
 // Tile is a block entity (chest inventory / bed color). Workbenches have no tile.
@@ -38,10 +43,23 @@ type Tile struct {
 	// 告示牌的四行字，以及还有权写字的玩家 UUID：放下牌子的人可以写一次，写完清空，不存盘，重启后也清空。
 	Lines  [4]string
 	Editor string
+
+	// 头颅的种类（0 骷髅、1 凋灵骷髅、2 僵尸、3 玩家、4 苦力怕、5 龙）和朝上摆放时的旋转角。
+	// 物品展示框复用 Rotation 存画的旋转角（0~7）。
+	SkullType byte
+	Rotation  byte
 }
 
 func tileKey(x, y, z int32) string {
 	return fmt.Sprintf("%d,%d,%d", x, y, z)
+}
+
+// itemAt 取物品栏里的第 index 格，越界返回空物品。花盆、展示框只存一件东西，但存档残缺时可能是空的。
+func itemAt(items []protocol.Item, index int) protocol.Item {
+	if index < 0 || index >= len(items) {
+		return protocol.Air()
+	}
+	return items[index]
 }
 
 func NewChestTile(x, y, z int32) Tile {
@@ -75,6 +93,14 @@ func (t Tile) SpawnNBT() []byte {
 		return nbt.SpawnSign(t.X, t.Y, t.Z, t.Lines)
 	case TileEnderChest:
 		return nbt.SpawnEnderChest(t.X, t.Y, t.Z)
+	case TileFlowerPot:
+		return nbt.SpawnFlowerPot(t.X, t.Y, t.Z, int16(itemAt(t.Items, 0).ID), itemAt(t.Items, 0).Meta)
+	case TileSkull:
+		return nbt.SpawnSkull(t.X, t.Y, t.Z, t.SkullType, t.Rotation)
+	case TileItemFrame:
+		return nbt.SpawnItemFrame(t.X, t.Y, t.Z, t.Rotation, itemAt(t.Items, 0))
+	case TileHopper:
+		return nbt.SpawnHopper(t.X, t.Y, t.Z)
 	default:
 		if t.ID == TileChest && t.Paired {
 			return nbt.SpawnPairedChest(t.X, t.Y, t.Z, t.PairX, t.PairZ)

@@ -6,6 +6,13 @@ import "go-mc-server/internal/protocol/packets"
 // 用二值类型断言而不是再往 dispatch 那个 switch 里加 case：
 // 项目规范禁止类型 switch，旧的那个只是存量，不在这里扩大。
 func (s *Session) dispatchExtra(pkt packets.Packet) bool {
+	var frame, isFrame = pkt.(*packets.ItemFrameDropItemPacket)
+	if isFrame {
+		if s.OnItemFrameDrop != nil {
+			s.OnItemFrameDrop(s, frame)
+		}
+		return true
+	}
 	var eventPkt, isEvent = pkt.(*packets.EntityEventPacket)
 	if isEvent {
 		if s.OnEntityEvent != nil {

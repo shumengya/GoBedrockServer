@@ -102,7 +102,7 @@
 | `0x44` | [MapInfoRequest](../pocketmine服务器参考/src/pocketmine/network/mcpe/protocol/MapInfoRequestPacket.php) | 请求地图信息 | 未实现 |
 | `0x45` | [RequestChunkRadius](../pocketmine服务器参考/src/pocketmine/network/mcpe/protocol/RequestChunkRadiusPacket.php) | 请求区块加载半径 | [已注册](../internal/protocol/packets/request_chunk_radius.go) |
 | `0x46` | [ChunkRadiusUpdated](../pocketmine服务器参考/src/pocketmine/network/mcpe/protocol/ChunkRadiusUpdatedPacket.php) | 回告实际区块半径 | [已注册](../internal/protocol/packets/chunk_radius_updated.go) |
-| `0x47` | [ItemFrameDropItem](../pocketmine服务器参考/src/pocketmine/network/mcpe/protocol/ItemFrameDropItemPacket.php) | 请求掉落展示框中的物品 | 未实现 |
+| `0x47` | [ItemFrameDropItem](../pocketmine服务器参考/src/pocketmine/network/mcpe/protocol/ItemFrameDropItemPacket.php) | 请求掉落展示框中的物品 | [已注册](../internal/protocol/packets/item_frame_drop_item.go) |
 | `0x48` | [ReplaceItemInSlot](../pocketmine服务器参考/src/pocketmine/network/mcpe/protocol/ReplaceItemInSlotPacket.php) | 替换槽内物品 | 未实现 |
 | `0x49` | `GAME_RULES_CHANGED_PACKET`（仅常量） | 游戏规则变更（仅声明） | 未实现 |
 | `0x4A` | [Camera](../pocketmine服务器参考/src/pocketmine/network/mcpe/protocol/CameraPacket.php) | 相机事件 | 未实现 |

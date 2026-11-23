@@ -1,6 +1,7 @@
 package storage_test
 
 import "os"
+import "bytes"
 import "strings"
 import "testing"
 
@@ -9,7 +10,7 @@ import "go-mc-server/internal/storage"
 import "go-mc-server/internal/world"
 
 func sameItem(left protocol.Item, right protocol.Item) bool {
-	return left.ID == right.ID && left.Meta == right.Meta && left.Count == right.Count
+	return left.ID == right.ID && left.Meta == right.Meta && left.Count == right.Count && bytes.Equal(left.NBT, right.NBT)
 }
 
 // 熔炉、配对的箱子、告示牌、床存盘再读回来，每个字段都要原样回来。
@@ -23,6 +24,10 @@ func TestTilesRoundTrip(test *testing.T) {
 		{ID: world.TileChest, X: 2, Y: 5, Z: 2, Items: chestItems, Paired: true, PairX: 3, PairZ: 2},
 		{ID: world.TileSign, X: 4, Y: 5, Z: 2, Lines: [4]string{"第一行", "", "第三行", ""}},
 		{ID: world.TileBed, X: 5, Y: 5, Z: 2, Color: 14},
+		world.NewSkullTile(6, 5, 2, 4, 13),
+		{ID: world.TileItemFrame, X: 7, Y: 5, Z: 2, Rotation: 7, Items: []protocol.Item{{ID: 267, Meta: 17, Count: 1, NBT: []byte{10, 0, 0, 0}}}},
+		{ID: world.TileFlowerPot, X: 8, Y: 5, Z: 2, Items: []protocol.Item{{ID: 6, Meta: 2, Count: 1}}},
+		world.NewHopperTile(9, 5, 2),
 	}
 	var saveErr error = storage.SaveTiles(directory, "w", storage.TilesFromWorld(saved))
 	if saveErr != nil {
@@ -40,6 +45,9 @@ func TestTilesRoundTrip(test *testing.T) {
 	for index = 0; index < len(saved); index++ {
 		var want world.Tile = saved[index]
 		var got world.Tile = loaded[index]
+		if got.Rotation != want.Rotation || got.SkullType != want.SkullType || len(got.Items) != len(want.Items) {
+			test.Fatalf("期望种类/角度/格数 %d/%d/%d，实际 %d/%d/%d", want.SkullType, want.Rotation, len(want.Items), got.SkullType, got.Rotation, len(got.Items))
+		}
 		if got.ID != want.ID || got.X != want.X || got.Y != want.Y || got.Z != want.Z || got.Color != want.Color {
 			test.Fatalf("第 %d 个基本字段不对，期望 %+v，实际 %+v", index, want, got)
 		}

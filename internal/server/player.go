@@ -415,6 +415,10 @@ func takeMatching(p *Player, slot int, id, meta int32, need int) int {
 func (p *Player) ConsumeHeld(n byte) (slot int, item protocol.Item, changed bool) {
 	p.mu.Lock()
 	defer p.mu.Unlock()
+	return p.consumeHeldLocked(n)
+}
+
+func (p *Player) consumeHeldLocked(n byte) (slot int, item protocol.Item, changed bool) {
 	slot = p.heldInventorySlotLocked()
 	if p.GameMode == int32(protocol.GameModeCreative) {
 		return slot, p.HeldItem, false

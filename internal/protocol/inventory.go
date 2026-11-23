@@ -18,6 +18,10 @@ const (
 
 	ChestSize   = 27
 	FurnaceSize = 3
+	HopperSize  = 5
+
+	// InventoryTypeHopper 漏斗窗口的网络类型号（参考端 InventoryNetworkIds::HOPPER）。
+	InventoryTypeHopper = 8
 
 	// ArmorSize 盔甲槽数：头盔、胸甲、护腿、靴子。
 	ArmorSize = 4

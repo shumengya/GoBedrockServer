@@ -35,6 +35,13 @@ func OnNeighborChange(view View, pos Pos) []Change {
 		broken = signPostBroken(view, pos)
 	case BlockWallSign:
 		broken = wallSignBroken(view, pos, meta)
+	case BlockFlowerPot:
+		var support, loaded = neighborBlock(view, pos, FaceDown)
+		broken = loaded && IsTransparent(support)
+	case BlockSkull:
+		broken = skullBroken(view, pos, meta)
+	case BlockItemFrame:
+		broken = itemFrameBroken(view, pos, meta)
 	}
 	if isCrop(id) {
 		broken = cropBroken(view, pos)
@@ -136,6 +143,24 @@ func cropBroken(view View, pos Pos) bool {
 func attachedBroken(view View, pos Pos, face int32) bool {
 	var supportID, loaded = neighborBlock(view, pos, face)
 	return loaded && IsTransparent(supportID)
+}
+
+// skullBroken 头颅的 meta 就是它贴着的那个面，支撑是那个面的对面。
+// 参考端没有这条规则（头颅会浮空），这里按原版补上。meta 0 是数据不对，不动它。
+func skullBroken(view View, pos Pos, meta byte) bool {
+	if meta == 0 || meta > byte(FaceEast) {
+		return false
+	}
+	return attachedBroken(view, pos, int32(meta)^1)
+}
+
+// itemFrameBroken 物品展示框贴着的那面不实心就掉下来，面编号见 itemFrameSupportByMeta。
+func itemFrameBroken(view View, pos Pos, meta byte) bool {
+	if meta > 3 {
+		return false
+	}
+	var supportID, loaded = neighborBlock(view, pos, itemFrameSupportByMeta[meta])
+	return loaded && !IsSolid(supportID)
 }
 
 // leverSupportFace 拉杆 meta 低 3 位对应它靠着的那个面：

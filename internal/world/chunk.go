@@ -26,6 +26,10 @@ const (
 	BlockBed           = 26
 	BlockChest         = 54
 	BlockCraftingTable = 58
+	BlockFlowerPot     = 140
+	BlockSkull         = 144
+	BlockHopper        = 154
+	BlockItemFrame     = 199
 	BlockNetherrack    = 87
 	BlockEndStone      = 121
 

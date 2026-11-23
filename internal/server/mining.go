@@ -281,6 +281,9 @@ func (srv *Server) handleRemoveBlock(sess *network.Session, pkt *packets.RemoveB
 	if hasTile && tile.ID == world.TileBed {
 		drops = withBedColor(drops, tile.Color)
 	}
+	if blockID == world.BlockSkull && tile.ID == world.TileSkull {
+		drops = []protocol.Item{{ID: 397, Meta: int32(tile.SkullType), Count: 1}}
+	}
 	drops = append(drops, partnerDrops...)
 	var index int = 0
 	for index = 0; index < len(drops); index++ {

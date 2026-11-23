@@ -56,6 +56,7 @@ RakNet 版本 **8** 与游戏协议号 **113** 位于不同层。离线握手依
 | 36 CraftingEvent | C→S | 窗口 ID Byte、类型 VarInt、配方 UUID；先输入再输出，每组均为 UVarInt 数量 + Slot 列表。桌面客户端可发长度为零的输入列表；材料来自此前的移槽记录 |
 | 38 BlockEntityData | C↔S | BlockPos，然后**剩余全部字节**为方块实体 NBT，没有额外 String 长度 |
 | 3A FullChunkData | S→C | 区块 X VarInt、区块 Z VarInt、列数据 String；这里的 X/Z 是区块坐标 |
+| 47 ItemFrameDropItem | C→S | 只有 BlockPos，没有 Slot。例如 `47 01 40 04` 请求取出 (-1, 64, 2) 的框中物品。成功后服务端用 `38 BlockEntityData` 同步空框，用 `0F AddItemEntity` 生成掉落物。 |
 | 53 ResourcePackDataInfo | S→C | 包 ID String、单块上限 LE32、块数 LE32、压缩包大小 LE64、SHA-256 字节串 String |
 | 55 ResourcePackChunkRequest | C→S | 包 ID String、块索引 LE32 |
 | 54 ResourcePackChunkData | S→C | 包 ID String、块索引 LE32、进度 LE64、**数据长度 LE32**、数据字节；这里不要用 String 读块数据 |

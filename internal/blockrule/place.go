@@ -69,6 +69,17 @@ func Place(view View, req PlaceRequest) ([]Change, bool) {
 	if isSign(hand) {
 		return placeSign(view, req, spot)
 	}
+	// 花盆、头颅、物品展示框、漏斗的朝向由被点击的面决定，不走下面按偏航角算 meta 的路。
+	switch hand {
+	case BlockFlowerPot:
+		return placeFlowerPot(view, spot)
+	case BlockSkull:
+		return placeSkull(view, req, spot)
+	case BlockItemFrame:
+		return placeItemFrame(view, req, spot)
+	case BlockHopper:
+		return placeHopper(spot, req.Face)
+	}
 	if !supportedAt(view, hand, spot) {
 		return nil, false
 	}

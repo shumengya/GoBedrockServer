@@ -16,13 +16,18 @@ func SlotCount(id string) int {
 		return ChestSize
 	case TileFurnace:
 		return FurnaceSize
+	case TileHopper:
+		return HopperSize
+	case TileFlowerPot, TileItemFrame:
+		// 花盆和展示框都只装一件东西，借用一格物品栏存它，配对、存盘、掉落都走现成的路。
+		return 1
 	}
 	return 0
 }
 
 // KnownTile 读档时认得的方块实体种类，别的一律丢弃。
 func KnownTile(id string) bool {
-	return SlotCount(id) > 0 || id == TileBed || id == TileSign || id == TileEnderChest
+	return SlotCount(id) > 0 || id == TileBed || id == TileSign || id == TileEnderChest || id == TileSkull
 }
 
 func padItems(items []protocol.Item, size int) []protocol.Item {
@@ -86,4 +91,31 @@ func NewFurnaceTile(posX int32, posY int32, posZ int32) Tile {
 // 里面的东西属于玩家，不属于这个方块。
 func NewEnderChestTile(posX int32, posY int32, posZ int32) Tile {
 	return Tile{ID: TileEnderChest, X: posX, Y: posY, Z: posZ}
+}
+
+// NewFlowerPotTile 一个空花盆。种进去的东西占物品栏第 0 格。
+func NewFlowerPotTile(posX int32, posY int32, posZ int32) Tile {
+	return Tile{ID: TileFlowerPot, X: posX, Y: posY, Z: posZ, Items: make([]protocol.Item, 1)}
+}
+
+// NewSkullTile 一颗头颅。skullType 是种类，rotation 只在立着放时有用。
+func NewSkullTile(posX int32, posY int32, posZ int32, skullType byte, rotation byte) Tile {
+	return Tile{
+		ID:        TileSkull,
+		X:         posX,
+		Y:         posY,
+		Z:         posZ,
+		SkullType: skullType,
+		Rotation:  rotation,
+	}
+}
+
+// NewItemFrameTile 一个空展示框。
+func NewItemFrameTile(posX int32, posY int32, posZ int32) Tile {
+	return Tile{ID: TileItemFrame, X: posX, Y: posY, Z: posZ, Items: make([]protocol.Item, 1)}
+}
+
+// 漏斗的五格物品随方块实体存档。
+func NewHopperTile(posX int32, posY int32, posZ int32) Tile {
+	return Tile{ID: TileHopper, X: posX, Y: posY, Z: posZ, Items: make([]protocol.Item, HopperSize)}
 }

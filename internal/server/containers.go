@@ -29,6 +29,9 @@ func (srv *Server) onBlockPlaced(p *Player, x, y, z int32, id byte, color byte) 
 		t := world.NewSignTile(x, y, z, p.UUID)
 		w.SetTile(t)
 		srv.broadcastTile(wn, t)
+	case world.BlockFlowerPot, world.BlockSkull, world.BlockItemFrame, world.BlockHopper:
+		// 头颅种类沿用床的做法，从手持物的 meta 里来。
+		srv.onDecorPlaced(p, x, y, z, id, color)
 	default:
 		w.RemoveTile(x, y, z)
 	}
@@ -41,10 +44,11 @@ func (srv *Server) broadcastTile(worldName string, t world.Tile) {
 	}, "")
 }
 
-// isContainerBlock 点一下会打开物品栏窗口的方块：箱子、末影箱和熔炉（含烧着的）。
+// isContainerBlock 点一下会打开物品栏窗口的方块：箱子、末影箱、熔炉（含烧着的）和漏斗。
 func isContainerBlock(id byte) bool {
 	return id == world.BlockChest || id == world.BlockEnderChest ||
-		id == world.BlockFurnace || id == world.BlockBurningFurnace
+		id == world.BlockFurnace || id == world.BlockBurningFurnace ||
+		id == world.BlockHopper
 }
 
 // containerTileFor 这种方块对应哪种方块实体，不是容器返回空串。
@@ -58,12 +62,18 @@ func containerTileFor(id byte) string {
 	if id == world.BlockFurnace || id == world.BlockBurningFurnace {
 		return world.TileFurnace
 	}
+	if id == world.BlockHopper {
+		return world.TileHopper
+	}
 	return ""
 }
 
 func containerWindowType(tileID string) byte {
 	if tileID == world.TileFurnace {
 		return protocol.InventoryTypeFurnace
+	}
+	if tileID == world.TileHopper {
+		return protocol.InventoryTypeHopper
 	}
 	return protocol.InventoryTypeContainer
 }
@@ -74,6 +84,9 @@ func newContainerTile(tileID string, posX int32, posY int32, posZ int32) world.T
 	}
 	if tileID == world.TileEnderChest {
 		return world.NewEnderChestTile(posX, posY, posZ)
+	}
+	if tileID == world.TileHopper {
+		return world.NewHopperTile(posX, posY, posZ)
 	}
 	return world.NewChestTile(posX, posY, posZ)
 }

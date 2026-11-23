@@ -408,6 +408,7 @@ func (srv *Server) onNewRakSession(rakSess *raknet.Session) {
 	}
 	sess.OnUseItem = func(s *network.Session, pkt *packets.UseItemPacket) { srv.handleUseItem(s, pkt) }
 	sess.OnRemoveBlock = func(s *network.Session, pkt *packets.RemoveBlockPacket) { srv.handleRemoveBlock(s, pkt) }
+	sess.OnItemFrameDrop = srv.handleItemFrameDrop
 	sess.OnMobEquipment = func(s *network.Session, pkt *packets.MobEquipmentPacket) { srv.handleMobEquipment(s, pkt) }
 	sess.OnPlayerAction = func(s *network.Session, pkt *packets.PlayerActionPacket) {
 		srv.handlePlayerAction(s, pkt)
@@ -660,6 +661,10 @@ func (srv *Server) handleUseItem(sess *network.Session, pkt *packets.UseItemPack
 
 	// 门、拉杆、按钮这类方块先吃掉点击；潜行时不吃，留给下面的放置流程。
 	if srv.interactBlock(player, pkt) {
+		return
+	}
+	// 花盆、物品展示框：种东西进去、放东西进去、转一格。
+	if srv.interactDecor(player, pkt) {
 		return
 	}
 	// 手持物一律以服务端记录为准，不信客户端包里的物品栏槽位。

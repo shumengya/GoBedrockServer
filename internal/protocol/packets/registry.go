@@ -36,6 +36,7 @@ func init() {
 	Register(protocol.IDLevelSoundEvent, func() Packet { return &LevelSoundEventPacket{} })
 	Register(protocol.IDLevelEvent, func() Packet { return &LevelEventPacket{} })
 	Register(protocol.IDRemoveBlock, func() Packet { return &RemoveBlockPacket{} })
+	Register(protocol.IDItemFrameDropItem, func() Packet { return &ItemFrameDropItemPacket{} })
 	Register(protocol.IDUpdateBlock, func() Packet { return &UpdateBlockPacket{} })
 	Register(protocol.IDUpdateAttributes, func() Packet { return &UpdateAttributesPacket{} })
 	Register(protocol.IDMobEquipment, func() Packet { return &MobEquipmentPacket{} })
