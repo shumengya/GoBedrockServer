@@ -5,6 +5,11 @@ type Random interface {
 	IntN(count int) int
 }
 
+type RandomView interface {
+	View
+	Light(Pos) (byte, byte)
+}
+
 // 作物每次被随机刻选中，有三分之一的机会长一个阶段，长到 7 就成熟。
 const cropGrowthOutOf int = 3
 const cropRipeStage byte = 7
@@ -15,7 +20,7 @@ const columnRipeCount byte = 15
 // IsRandomTicked 这种方块要不要参与随机刻。服务端据此先筛一遍，大部分格子不用往下评估。
 func IsRandomTicked(id byte) bool {
 	switch id {
-	case BlockFire, BlockSapling, BlockLeaves, BlockLeaves2, BlockWheat,
+	case BlockIce, BlockSnowLayer, BlockFire, BlockSapling, BlockLeaves, BlockLeaves2, BlockWheat,
 		BlockCarrot,
 		BlockPotato,
 		BlockBeetroot,
@@ -31,17 +36,30 @@ func IsRandomTicked(id byte) bool {
 }
 
 // OnRandomTick 评估被随机刻选中的 spot。同一次调用里随机数的取用顺序是固定的，测试靠这个编排。
-// 光照还没做，所有依赖光照的判定一律按"光照充足"处理。
-func OnRandomTick(view View, spot Pos, random Random) Update {
+func OnRandomTick(view RandomView, spot Pos, random Random) Update {
 	if !view.Loaded(spot) {
 		return Update{}
 	}
 	var id, meta = view.Block(spot)
 	switch id {
+	case BlockIce, BlockSnowLayer:
+		var face int32 = FaceDown
+		for face = FaceDown; face <= FaceEast; face++ {
+			var side, _ = spot.Side(face)
+			var _, light = view.Light(side)
+			if light >= 12 {
+				var next byte = BlockAir
+				if id == BlockIce {
+					next = BlockFlowingWater
+				}
+				return Update{Changes: []Change{{Pos: spot, ID: next}}}
+			}
+		}
 	case BlockFire:
 		return fireWake(view, spot, fireDelay+random.IntN(11))
 	case BlockSapling:
-		if random.IntN(7) != 0 {
+		var light, _ = view.Light(spot)
+		if light < 8 || random.IntN(7) != 0 {
 			return Update{}
 		}
 		if meta&8 == 0 {
@@ -169,8 +187,15 @@ func bareDirtUnderOpenSky(view View, target Pos) bool {
 }
 
 // grassSpread 草方块试四次：在 x±1、y-3~y+1、z±1 的范围里随机挑一格，是裸露的泥土就长成草。
-// 草被盖住会变回泥土，依赖光照，等光照做了再补。
-func grassSpread(view View, spot Pos, random Random) Update {
+func grassSpread(view RandomView, spot Pos, random Random) Update {
+	var above = spot.Add(0, 1, 0)
+	var light, _ = view.Light(above)
+	if light < 4 && PropsOf(IDAt(view, above)).Opacity >= 2 {
+		return Update{Changes: []Change{{Pos: spot, ID: BlockDirt}}}
+	}
+	if light < 9 {
+		return Update{}
+	}
 	var changes []Change = nil
 	var attempt int = 0
 	for attempt = 0; attempt < 4; attempt++ {
@@ -180,6 +205,11 @@ func grassSpread(view View, spot Pos, random Random) Update {
 			PosZ: spot.PosZ - 1 + int32(random.IntN(3)),
 		}
 		if bareDirtUnderOpenSky(view, target) {
+			var top = target.Add(0, 1, 0)
+			var targetLight, _ = view.Light(top)
+			if targetLight < 4 || PropsOf(IDAt(view, top)).Opacity >= 2 {
+				continue
+			}
 			changes = append(changes, Change{Pos: target, ID: BlockGrass, Meta: 0})
 		}
 	}

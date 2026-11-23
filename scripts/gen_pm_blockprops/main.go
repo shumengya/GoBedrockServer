@@ -19,12 +19,15 @@ const outputPath string = "internal/blockrule/props_table.go"
 
 // 参考端 Block 基类的默认值，子类没覆盖就沿用。
 var defaultValues map[string]string = map[string]string{
-	"isSolid":         "true",
-	"isTransparent":   "false",
-	"canBeReplaced":   "false",
-	"canBeFlowedInto": "false",
-	"getBurnChance":   "0",
-	"getBurnAbility":  "0",
+	"isSolid":          "true",
+	"isTransparent":    "false",
+	"canBeReplaced":    "false",
+	"canBeFlowedInto":  "false",
+	"getBurnChance":    "0",
+	"getBurnAbility":   "0",
+	"getLightFilter":   "15",
+	"diffusesSkyLight": "false",
+	"getLightLevel":    "0",
 }
 
 var methodNames []string = []string{
@@ -34,6 +37,9 @@ var methodNames []string = []string{
 	"canBeFlowedInto",
 	"getBurnChance",
 	"getBurnAbility",
+	"getLightFilter",
+	"diffusesSkyLight",
+	"getLightLevel",
 }
 
 var classPattern *regexp.Regexp = regexp.MustCompile(`(?m)^\s*(?:abstract\s+)?class\s+(\w+)\s+extends\s+(\w+)`)
@@ -116,7 +122,7 @@ func run() error {
 			values[method] = literal
 		}
 		lines = append(lines, fmt.Sprintf(
-			"\t%d: {Solid: %s, Transparent: %s, Replaceable: %s, FlowInto: %s, BurnChance: %s, BurnAbility: %s}, // %s",
+			"\t%d: {Solid: %s, Transparent: %s, Replaceable: %s, FlowInto: %s, BurnChance: %s, BurnAbility: %s, Opacity: %s, DiffusesSky: %s, Emission: %s}, // %s",
 			blockID,
 			values["isSolid"],
 			values["isTransparent"],
@@ -124,6 +130,9 @@ func run() error {
 			values["canBeFlowedInto"],
 			values["getBurnChance"],
 			values["getBurnAbility"],
+			values["getLightFilter"],
+			values["diffusesSkyLight"],
+			values["getLightLevel"],
 			className,
 		))
 	}

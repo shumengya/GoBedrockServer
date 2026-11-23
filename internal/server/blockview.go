@@ -24,6 +24,10 @@ type peekView struct {
 	target *world.World
 }
 
+func (view peekView) Light(pos blockrule.Pos) (byte, byte) {
+	return view.target.LightAt(pos.PosX, pos.PosY, pos.PosZ)
+}
+
 func (view peekView) Block(pos blockrule.Pos) (byte, byte) {
 	var id, meta, _ = view.target.Peek(pos.PosX, pos.PosY, pos.PosZ)
 	return id, meta

@@ -99,6 +99,7 @@ func (w *World) chunk(cx, cz int32) *Chunk {
 		return existing
 	}
 	w.chunks[key] = created
+	w.lightBoundary(cx, cz, created, true)
 	return created
 }
 
@@ -203,13 +204,30 @@ func (w *World) SetBlock(x, y, z int32, id, data byte) bool {
 	cz := int32(math.Floor(float64(z) / 16.0))
 	// 写之前拿到的区块可能正好被卸载线程存盘后移走，写进去就丢了，withChunk 会在这种情况下重做。
 	return w.withChunk(cx, cz, func(column *Chunk) {
-		column.SetBlock(lx, int(y), lz, id, data)
+		w.mu.Lock()
+		defer w.mu.Unlock()
+		if w.chunks[chunkKey(cx, cz)] != column {
+			return
+		}
+		var wave = lightWave{world: w}
+		defer wave.unlock()
+		wave.column(x, z)
+		var previous byte = 0
+		var section = column.sub[y>>4]
+		if section != nil {
+			previous = section.ids[subChunkIDIndex(lx, int(y&15), lz)]
+		}
+		column.setBlockLocked(lx, int(y), lz, id, data)
+		if optics[previous].emit != optics[id].emit || optics[previous].filter != optics[id].filter {
+			wave.enqueue(x, y, z)
+			wave.run()
+		}
 	})
 }
 
 // NetworkSerialize returns FullChunkData payload for column (cx, cz).
 func (w *World) NetworkSerialize(cx, cz int32) []byte {
-	buf := w.chunk(cx, cz).NetworkSerialize()
+	buf := w.chunk(cx, cz).networkPayload(w.ProtocolDimension() == 0)
 	return append(buf, w.columnTileNBT(cx, cz)...)
 }
 

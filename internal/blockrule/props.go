@@ -14,10 +14,13 @@ type Props struct {
 	// BurnChance 被火点燃的几率，BurnAbility 是火在旁边时烧掉的几率，都是 0 表示不可燃。
 	BurnChance  int
 	BurnAbility int
+	Opacity     byte
+	DiffusesSky bool
+	Emission    byte
 }
 
 // 表里没有的 ID 当成普通实心方块。
-var defaultProps Props = Props{Solid: true}
+var defaultProps Props = Props{Solid: true, Opacity: 15}
 
 // PropsOf 返回方块的静态属性。
 func PropsOf(id byte) Props {

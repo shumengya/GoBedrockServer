@@ -41,6 +41,8 @@ func (view *mapView) Loaded(pos blockrule.Pos) bool {
 	return !view.unloaded[pos]
 }
 
+func (view *mapView) Light(pos blockrule.Pos) (byte, byte) { return 15, 0 }
+
 func posAt(posX int32, posY int32, posZ int32) blockrule.Pos {
 	return blockrule.Pos{PosX: posX, PosY: posY, PosZ: posZ}
 }

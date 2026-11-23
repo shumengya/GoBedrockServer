@@ -100,5 +100,8 @@ func (w *World) unloadOne(key uint64, chunkX int32, chunkZ int32) (bool, error) 
 		return false, nil
 	}
 	delete(w.chunks, key)
+	column.mu.Lock()
+	w.lightBoundary(chunkX, chunkZ, column, false)
+	column.mu.Unlock()
 	return true, nil
 }

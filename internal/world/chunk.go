@@ -63,16 +63,12 @@ func dataIndex(x, y, z int) (byteIdx int, shift uint) {
 type SubChunk struct {
 	ids        [4096]byte
 	data       [2048]byte
-	skyLight   [2048]byte
+	litCells   int
 	blockLight [2048]byte
 }
 
 func newSubChunk() *SubChunk {
-	sc := &SubChunk{}
-	for i := range sc.skyLight {
-		sc.skyLight[i] = 0xFF
-	}
-	return sc
+	return &SubChunk{}
 }
 
 func (sc *SubChunk) empty() bool {
@@ -97,12 +93,12 @@ func (sc *SubChunk) set(x, y, z int, id, data byte) {
 	sc.data[bi] = (sc.data[bi] &^ (0x0F << sh)) | ((data & 0x0F) << sh)
 }
 
-func (sc *SubChunk) networkSerialize() []byte {
+func (sc *SubChunk) networkSerialize(sky *[2048]byte) []byte {
 	buf := make([]byte, 0, 1+4096+2048+2048+2048)
 	buf = append(buf, 0)
 	buf = append(buf, sc.ids[:]...)
 	buf = append(buf, sc.data[:]...)
-	buf = append(buf, sc.skyLight[:]...)
+	buf = append(buf, sky[:]...)
 	buf = append(buf, sc.blockLight[:]...)
 	return buf
 }
@@ -150,32 +146,23 @@ func (c *Chunk) SetBlock(x, y, z int, id, data byte) {
 	}
 	c.mu.Lock()
 	defer c.mu.Unlock()
+	c.setBlockLocked(x, y, z, id, data)
+}
+
+func (c *Chunk) setBlockLocked(x, y, z int, id, data byte) {
 	sc := c.subAt(y >> 4)
+	var previous = sc.ids[subChunkIDIndex(x, y&15, z)]
 	sc.set(x, y&15, z, id, data)
 	c.dirty = true
-	hi := (z << 4) | x
-	if id != BlockAir {
-		if uint16(y+1) > c.heightMap[hi] {
-			c.heightMap[hi] = uint16(y + 1)
-		}
+	if skyBarrier(previous) == skyBarrier(id) {
 		return
 	}
-	if c.heightMap[hi] != uint16(y+1) {
-		return
+	var index = z<<4 | x
+	if skyBarrier(id) {
+		c.heightMap[index] = max(c.heightMap[index], uint16(y+1))
+	} else if c.heightMap[index] == uint16(y+1) {
+		c.heightMap[index] = c.skyHeight(x, y-1, z)
 	}
-	h := uint16(0)
-	for yy := y - 1; yy >= 0; yy-- {
-		sy := yy >> 4
-		if c.sub[sy] == nil {
-			continue
-		}
-		bid, _ := c.sub[sy].get(x, yy&15, z)
-		if bid != BlockAir {
-			h = uint16(yy + 1)
-			break
-		}
-	}
-	c.heightMap[hi] = h
 }
 
 func (c *Chunk) Dirty() bool {
@@ -229,7 +216,7 @@ func (c *Chunk) EncodeDisk() []byte {
 	return buf
 }
 
-// DecodeDisk rebuilds a column from EncodeDisk bytes. Sky light is filled 0xFF.
+// 老版本把玻璃等透光方块也计入高度图；读盘时由方块重建。
 func DecodeDisk(raw []byte) (*Chunk, error) {
 	if len(raw) < 2+512+256 {
 		return nil, errDiskShort
@@ -260,7 +247,7 @@ func DecodeDisk(raw []byte) (*Chunk, error) {
 		return nil, errDiskShort
 	}
 	for i := 0; i < 256; i++ {
-		c.heightMap[i] = binary.LittleEndian.Uint16(raw[off : off+2])
+		c.heightMap[i] = c.skyHeight(i&15, 255, i>>4)
 		off += 2
 	}
 	copy(c.biomes[:], raw[off:off+256])
@@ -353,13 +340,15 @@ func (c *Chunk) fillEnd(cx, cz int32) {
 	c.paintOriginIsland(cx, cz, BlockEndStone, BlockEndStone)
 }
 
-// NetworkSerialize writes the MCPE 1.1.x FullChunkData payload for this column.
-func (c *Chunk) NetworkSerialize() []byte {
+// NetworkSerialize 单独编码一列时使用主世界天空；世界发包时按维度选择天空光。
+func (c *Chunk) NetworkSerialize() []byte { return c.networkPayload(true) }
+
+func (c *Chunk) networkPayload(hasSky bool) []byte {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 	count := 1
 	for i := maxSubChunks - 1; i >= 0; i-- {
-		if c.sub[i] != nil && !c.sub[i].empty() {
+		if c.sub[i] != nil && (c.sub[i].litCells > 0 || !c.sub[i].empty()) {
 			count = i + 1
 			break
 		}
@@ -372,7 +361,11 @@ func (c *Chunk) NetworkSerialize() []byte {
 		if sc == nil {
 			sc = empty
 		}
-		buf = append(buf, sc.networkSerialize()...)
+		var sky [2048]byte
+		if hasSky {
+			c.skySection(i, &sky)
+		}
+		buf = append(buf, sc.networkSerialize(&sky)...)
 	}
 	var hm [512]byte
 	for i := 0; i < 256; i++ {
@@ -389,7 +382,7 @@ func (c *Chunk) NetworkSerialize() []byte {
 func GenerateFlatChunk() []byte {
 	c := newChunk()
 	c.fillFlat()
-	return c.NetworkSerialize()
+	return c.networkPayload(true)
 }
 
 // OffsetByFace returns the neighbour of (x,y,z) for a 1.1.x block face (0-5).
