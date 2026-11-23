@@ -14,6 +14,7 @@ type DroppedItemData struct {
 	ID          int32   `json:"id"`
 	Meta        int32   `json:"meta"`
 	Count       byte    `json:"count"`
+	NBT         []byte  `json:"nbt,omitempty"`
 	X           float32 `json:"x"`
 	Y           float32 `json:"y"`
 	Z           float32 `json:"z"`
@@ -64,5 +65,5 @@ func SaveDroppedItems(dataDir, worldName string, list []DroppedItemData) error {
 }
 
 func ItemFromDrop(d DroppedItemData) protocol.Item {
-	return protocol.Item{ID: d.ID, Meta: d.Meta, Count: d.Count}
+	return protocol.Item{ID: d.ID, Meta: d.Meta, Count: d.Count, NBT: d.NBT}
 }

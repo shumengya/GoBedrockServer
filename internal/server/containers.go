@@ -98,6 +98,9 @@ func (srv *Server) openContainer(player *Player, posX int32, posY int32, posZ in
 	if player == nil || player.Session == nil {
 		return
 	}
+	// 开窗的初始内容必须早于这个窗口的第一条自动运输更新。
+	srv.blockMu.Lock()
+	defer srv.blockMu.Unlock()
 	var blockWorld *world.World = srv.playerWorld(player)
 	var worldName string = srv.playerWorldName(player)
 	var tileID string = containerTileFor(blockIDAt(blockWorld, posX, posY, posZ))
@@ -183,6 +186,8 @@ func (srv *Server) handleContainerWindowSlot(player *Player, pkt *packets.Contai
 	if pkt.WindowID != protocol.WindowContainer {
 		return
 	}
+	srv.blockMu.Lock()
+	defer srv.blockMu.Unlock()
 	var halves, usable = srv.openContainerTiles(player)
 	if !usable {
 		return

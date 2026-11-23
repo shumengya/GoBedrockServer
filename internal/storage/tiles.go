@@ -11,21 +11,22 @@ import (
 const TilesFile = "tiles.json"
 
 type TileRecord struct {
-	ID        string     `json:"id"`
-	X         int32      `json:"x"`
-	Y         int32      `json:"y"`
-	Z         int32      `json:"z"`
-	Color     byte       `json:"color,omitempty"`
-	SkullType byte       `json:"skullType,omitempty"`
-	Rotation  byte       `json:"rotation,omitempty"`
-	Items     []SlotData `json:"items,omitempty"`
-	BurnTime  int32      `json:"burnTime,omitempty"`
-	CookTime  int32      `json:"cookTime,omitempty"`
-	MaxTime   int32      `json:"maxTime,omitempty"`
-	Paired    bool       `json:"paired,omitempty"`
-	PairX     int32      `json:"pairX,omitempty"`
-	PairZ     int32      `json:"pairZ,omitempty"`
-	Lines     []string   `json:"lines,omitempty"`
+	ID               string     `json:"id"`
+	X                int32      `json:"x"`
+	Y                int32      `json:"y"`
+	Z                int32      `json:"z"`
+	Color            byte       `json:"color,omitempty"`
+	SkullType        byte       `json:"skullType,omitempty"`
+	Rotation         byte       `json:"rotation,omitempty"`
+	TransferCooldown byte       `json:"transferCooldown,omitempty"`
+	Items            []SlotData `json:"items,omitempty"`
+	BurnTime         int32      `json:"burnTime,omitempty"`
+	CookTime         int32      `json:"cookTime,omitempty"`
+	MaxTime          int32      `json:"maxTime,omitempty"`
+	Paired           bool       `json:"paired,omitempty"`
+	PairX            int32      `json:"pairX,omitempty"`
+	PairZ            int32      `json:"pairZ,omitempty"`
+	Lines            []string   `json:"lines,omitempty"`
 }
 
 func TilesPath(dataDir, worldName string) string {
@@ -73,19 +74,20 @@ func TilesFromWorld(list []world.Tile) []TileRecord {
 	for index = 0; index < len(list); index++ {
 		var tile world.Tile = list[index]
 		var record TileRecord = TileRecord{
-			ID:        tile.ID,
-			X:         tile.X,
-			Y:         tile.Y,
-			Z:         tile.Z,
-			Color:     tile.Color,
-			SkullType: tile.SkullType,
-			Rotation:  tile.Rotation,
-			BurnTime:  tile.BurnTime,
-			CookTime:  tile.CookTime,
-			MaxTime:   tile.MaxTime,
-			Paired:    tile.Paired,
-			PairX:     tile.PairX,
-			PairZ:     tile.PairZ,
+			ID:               tile.ID,
+			X:                tile.X,
+			Y:                tile.Y,
+			Z:                tile.Z,
+			Color:            tile.Color,
+			SkullType:        tile.SkullType,
+			Rotation:         tile.Rotation,
+			TransferCooldown: tile.TransferCooldown,
+			BurnTime:         tile.BurnTime,
+			CookTime:         tile.CookTime,
+			MaxTime:          tile.MaxTime,
+			Paired:           tile.Paired,
+			PairX:            tile.PairX,
+			PairZ:            tile.PairZ,
 		}
 		if world.SlotCount(tile.ID) > 0 {
 			record.Items = SlotsFromItems(tile.Items)
@@ -112,19 +114,20 @@ func WorldTilesFromRecords(list []TileRecord) []world.Tile {
 	for index = 0; index < len(list); index++ {
 		var record TileRecord = list[index]
 		var tile world.Tile = world.Tile{
-			ID:        record.ID,
-			X:         record.X,
-			Y:         record.Y,
-			Z:         record.Z,
-			Color:     record.Color,
-			SkullType: record.SkullType,
-			Rotation:  record.Rotation,
-			BurnTime:  record.BurnTime,
-			CookTime:  record.CookTime,
-			MaxTime:   record.MaxTime,
-			Paired:    record.Paired,
-			PairX:     record.PairX,
-			PairZ:     record.PairZ,
+			ID:               record.ID,
+			X:                record.X,
+			Y:                record.Y,
+			Z:                record.Z,
+			Color:            record.Color,
+			SkullType:        record.SkullType,
+			Rotation:         record.Rotation,
+			TransferCooldown: record.TransferCooldown,
+			BurnTime:         record.BurnTime,
+			CookTime:         record.CookTime,
+			MaxTime:          record.MaxTime,
+			Paired:           record.Paired,
+			PairX:            record.PairX,
+			PairZ:            record.PairZ,
 		}
 		var size int = world.SlotCount(record.ID)
 		if size > 0 {

@@ -29,6 +29,8 @@ func TestTilesRoundTrip(test *testing.T) {
 		{ID: world.TileFlowerPot, X: 8, Y: 5, Z: 2, Items: []protocol.Item{{ID: 6, Meta: 2, Count: 1}}},
 		world.NewHopperTile(9, 5, 2),
 	}
+	saved[7].TransferCooldown = 6
+	saved[7].Items[3] = protocol.Item{ID: 264, Count: 3}
 	var saveErr error = storage.SaveTiles(directory, "w", storage.TilesFromWorld(saved))
 	if saveErr != nil {
 		test.Fatalf("存盘失败: %v", saveErr)
@@ -45,6 +47,9 @@ func TestTilesRoundTrip(test *testing.T) {
 	for index = 0; index < len(saved); index++ {
 		var want world.Tile = saved[index]
 		var got world.Tile = loaded[index]
+		if got.TransferCooldown != want.TransferCooldown {
+			test.Fatalf("期望传输冷却 %d，实际 %d", want.TransferCooldown, got.TransferCooldown)
+		}
 		if got.Rotation != want.Rotation || got.SkullType != want.SkullType || len(got.Items) != len(want.Items) {
 			test.Fatalf("期望种类/角度/格数 %d/%d/%d，实际 %d/%d/%d", want.SkullType, want.Rotation, len(want.Items), got.SkullType, got.Rotation, len(got.Items))
 		}

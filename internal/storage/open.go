@@ -46,11 +46,15 @@ func OpenWorld(dataDir string, definitions WorldDefaults) (*world.World, error) 
 }
 
 func SaveWorldFrom(dataDir string, loaded *world.World) error {
+	return SaveWorldWithTiles(dataDir, loaded, loaded.SnapshotTiles())
+}
+
+func SaveWorldWithTiles(dataDir string, loaded *world.World, tiles []world.Tile) error {
 	var err error = loaded.SaveDirty()
 	if err != nil {
 		return fmt.Errorf("保存世界 %s 区块: %w", loaded.Name, err)
 	}
-	err = SaveTiles(dataDir, loaded.Name, TilesFromWorld(loaded.SnapshotTiles()))
+	err = SaveTiles(dataDir, loaded.Name, TilesFromWorld(tiles))
 	if err != nil {
 		return fmt.Errorf("保存世界 %s 方块实体: %w", loaded.Name, err)
 	}

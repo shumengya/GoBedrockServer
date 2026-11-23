@@ -34,6 +34,8 @@ type Tile struct {
 	BurnTime int32
 	CookTime int32
 	MaxTime  int32
+	// 漏斗下一次容器传输前还要跳过的 tick 数。
+	TransferCooldown byte
 
 	// 箱子：和相邻箱子配成大箱子之后，另一半的 X、Z。
 	Paired bool

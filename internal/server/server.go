@@ -198,6 +198,7 @@ func (srv *Server) tickLoop() {
 			srv.tickFallingBlocks()
 			srv.tickRandom()
 			srv.tickFurnaces()
+			srv.tickHoppers()
 			srv.tickDayNight()
 			srv.tickChunkSend()
 			srv.tickLife()
@@ -328,10 +329,15 @@ func (srv *Server) saveOneWorld(name, reason string) {
 }
 
 func (srv *Server) persistWorld(w *world.World) error {
-	if err := storage.SaveWorldFrom(srv.cfg.DataDir, w); err != nil {
+	// 掉落物进入漏斗前后只能出现在一份快照里。锁只覆盖内存读取，不覆盖压缩和写盘。
+	srv.blockMu.Lock()
+	var tiles = w.SnapshotTiles()
+	var drops = srv.droppedSnapshot(w.Name)
+	srv.blockMu.Unlock()
+	if err := storage.SaveWorldWithTiles(srv.cfg.DataDir, w, tiles); err != nil {
 		return err
 	}
-	return storage.SaveDroppedItems(srv.cfg.DataDir, w.Name, srv.droppedSnapshot(w.Name))
+	return storage.SaveDroppedItems(srv.cfg.DataDir, w.Name, drops)
 }
 
 func (srv *Server) droppedSnapshot(worldName string) []storage.DroppedItemData {
@@ -349,6 +355,7 @@ func (srv *Server) droppedSnapshot(worldName string) []storage.DroppedItemData {
 			ID:          e.Item.ID,
 			Meta:        e.Item.Meta,
 			Count:       e.Item.Count,
+			NBT:         e.Item.NBT,
 			X:           e.X,
 			Y:           e.Y,
 			Z:           e.Z,
