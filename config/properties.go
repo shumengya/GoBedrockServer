@@ -122,6 +122,7 @@ func applyChoice(values map[string]string, key string, parse func(string) (int, 
 func (c *Config) ApplyProperties(values map[string]string) []string {
 	var warnings []string = nil
 	warnings = appendIf(warnings, applyInt(values, "server-port", 1, 65535, &c.Port))
+	warnings = appendIf(warnings, applyInt(values, "level-seed", -2147483648, 2147483647, &c.LevelSeed))
 	warnings = appendIf(warnings, applyInt(values, "max-players", 0, 10000, &c.MaxPlayers))
 	warnings = appendIf(warnings, applyInt(values, "spawn-protection", 0, 100000, &c.SpawnProtection))
 	warnings = appendIf(warnings, applyInt(values, "view-distance", MinViewDistance, MaxViewDistance, &c.ViewDistance))
@@ -163,6 +164,7 @@ func (c *Config) PropertiesText() string {
 	builder.WriteString("# 修改后重启生效；命令行参数（如 -port）优先于本文件。\n\n")
 	writeProperty(&builder, "服务器名称，显示在服务器列表里（不要写分号）", "motd", c.MOTD)
 	writeProperty(&builder, "UDP 端口", "server-port", strconv.Itoa(c.Port))
+	writeProperty(&builder, "新主世界种子（有符号 32 位整数），已有世界沿用存档", "level-seed", strconv.Itoa(c.LevelSeed))
 	writeProperty(&builder, "绑定地址，0.0.0.0 表示所有网卡", "server-ip", c.Host)
 	writeProperty(&builder, "最大玩家数，0 表示不限制", "max-players", strconv.Itoa(c.MaxPlayers))
 	writeProperty(&builder, "新玩家的默认游戏模式：0 / survival 生存，1 / creative 创造", "gamemode", strconv.Itoa(c.GameMode))

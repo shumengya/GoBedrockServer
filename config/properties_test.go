@@ -89,6 +89,7 @@ func TestApplyPropertiesRangeEdges(test *testing.T) {
 func TestPropertiesTextRoundTrip(test *testing.T) {
 	var source *Config = Default()
 	source.Port = 12345
+	source.LevelSeed = -2147483648
 	source.MOTD = "往返测试"
 	source.MaxPlayers = 7
 	source.GameMode = 1

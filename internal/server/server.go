@@ -107,7 +107,7 @@ func New(cfg *config.Config) *Server {
 	}
 	w := openWorld(storage.WorldDefaults{
 		Name:      defaultName,
-		Seed:      12345,
+		Seed:      int32(cfg.LevelSeed),
 		SpawnX:    int32(cfg.SpawnX),
 		SpawnY:    int32(cfg.SpawnY),
 		SpawnZ:    int32(cfg.SpawnZ),

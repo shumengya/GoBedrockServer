@@ -26,6 +26,7 @@ type Config struct {
 	SpawnY            int
 	SpawnZ            int
 	WorldName         string
+	LevelSeed         int
 	DataDir           string
 	AutosaveSeconds   int
 	PlayerSaveSeconds int
@@ -63,6 +64,7 @@ func Default() *Config {
 		SpawnY:            5,
 		SpawnZ:            0,
 		WorldName:         "world",
+		LevelSeed:         12345,
 		DataDir:           "data",
 		AutosaveSeconds:   30,
 		PlayerSaveSeconds: 600,
