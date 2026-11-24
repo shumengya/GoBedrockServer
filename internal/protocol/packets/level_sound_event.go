@@ -21,6 +21,11 @@ const (
 	SoundBreak     byte = 4
 	SoundPlace     byte = 5
 	SoundIgnite    byte = 47
+	SoundMilk byte = 43
+	SoundBucketFillWater byte = 81
+	SoundBucketFillLava byte = 82
+	SoundBucketEmptyWater byte = 83
+	SoundBucketEmptyLava byte = 84
 )
 
 func SoundName(id byte) string {

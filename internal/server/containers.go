@@ -192,7 +192,7 @@ func (srv *Server) handleContainerWindowSlot(player *Player, pkt *packets.Contai
 	if !usable {
 		return
 	}
-	if pkt.Item.Count > item.StackLimit(pkt.Item.ID) {
+	if pkt.Item.Count > item.StackLimit(pkt.Item) {
 		var contents = srv.windowContents(player, halves)
 		if pkt.Slot >= 0 && int(pkt.Slot) < len(contents) {
 			srv.resendContainerSlot(player, int(pkt.Slot), contents[pkt.Slot])

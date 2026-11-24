@@ -268,7 +268,7 @@ func (p *Player) addItemLocked(item protocol.Item) (leftover protocol.Item, ok b
 		return protocol.Air(), false
 	}
 	remain := item.Count
-	var limit byte = items.StackLimit(item.ID)
+	var limit byte = items.StackLimit(item)
 	// Merge into matching stacks first.
 	for i := 0; i < len(p.Inventory) && remain > 0; i++ {
 		slot := p.Inventory[i]
@@ -321,7 +321,7 @@ func (p *Player) CanAddItem(item protocol.Item) bool {
 		return false
 	}
 	need := int(item.Count)
-	var limit byte = items.StackLimit(item.ID)
+	var limit byte = items.StackLimit(item)
 	space := 0
 	for i := 0; i < len(p.Inventory); i++ {
 		slot := p.Inventory[i]

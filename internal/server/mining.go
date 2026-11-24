@@ -30,6 +30,10 @@ func (srv *Server) handlePlayerAction(sess *network.Session, pkt *packets.Player
 		return
 	}
 	switch pkt.Action {
+	case packets.ActionReleaseItem:
+		if sess.State() == network.StatePlaying {
+			srv.drinkMilk(player)
+		}
 	case packets.ActionStartBreak:
 		srv.startBreak(player, pkt)
 	case packets.ActionAbortBreak, packets.ActionStopBreak:

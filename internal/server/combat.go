@@ -21,14 +21,17 @@ func (srv *Server) playerList() []*Player {
 	return list
 }
 
-// handleInteract 只处理左键攻击玩家；右键、悬停、下载具都忽略。
-// 生物实体还没有血量系统，打了也不扣耐久，免得空挥白掉耐久。
+// 实体右键和左键攻击共用 Interact 包。
 func (srv *Server) handleInteract(sess *network.Session, pkt *packets.InteractPacket) {
-	if pkt.Action != packets.InteractLeftClick {
+	if pkt.Action != packets.InteractLeftClick && pkt.Action != packets.InteractRightClick {
 		return
 	}
 	var attacker *Player = srv.playerBySession(sess)
 	if attacker == nil || sess.State() != network.StatePlaying || attacker.IsDead() {
+		return
+	}
+	if pkt.Action == packets.InteractRightClick {
+		srv.milkCow(attacker, pkt.Target)
 		return
 	}
 	var target *Player = srv.playerByRuntimeID(pkt.Target)

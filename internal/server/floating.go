@@ -20,7 +20,7 @@ func (slots *floatingInventory) put(stack protocol.Item) bool {
 	if stack.IsAir() {
 		return true
 	}
-	var limit = item.StackLimit(stack.ID)
+	var limit = item.StackLimit(stack)
 	for index := range *slots {
 		var dest = &(*slots)[index]
 		if !sameStack(*dest, stack) || dest.Count >= limit {

@@ -86,8 +86,14 @@ func ByID(id int32) (*Type, bool) {
 	return fromBlock(id)
 }
 
-func StackLimit(id int32) byte {
-	if entry := byID[id]; entry != nil {
+func StackLimit(stack protocol.Item) byte {
+	if stack.ID == 325 {
+		if stack.Meta == 0 {
+			return 16
+		}
+		return 1
+	}
+	if entry := byID[stack.ID]; entry != nil {
 		return byte(entry.MaxStack)
 	}
 	return 64

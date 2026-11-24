@@ -778,7 +778,7 @@ func (srv *Server) handleContainerSetSlot(sess *network.Session, pkt *packets.Co
 		return
 	}
 	if pkt.WindowID == 0 {
-		if pkt.Item.Count > item.StackLimit(pkt.Item.ID) {
+		if pkt.Item.Count > item.StackLimit(pkt.Item) {
 			srv.sendPlayerInventory(p)
 			return
 		}

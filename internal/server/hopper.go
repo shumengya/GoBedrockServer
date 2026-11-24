@@ -82,7 +82,7 @@ func hopperContainers(level *world.World, pos blockrule.Pos) []world.Tile {
 // 优先合并完全相同的物品，再用空格。调用方可传入熔炉的单个可写槽。
 func hopperSpace(slots []protocol.Item, stack protocol.Item) int {
 	var empty = -1
-	var limit = item.StackLimit(stack.ID)
+	var limit = item.StackLimit(stack)
 	var index int = 0
 	for index = 0; index < len(slots); index++ {
 		if slots[index].IsAir() {
@@ -209,7 +209,7 @@ func (srv *Server) collectHopperDrops(name string, level *world.World, pos block
 		}
 		var slots = slices.Clone(tile.Items)
 		var stack = drop.Item
-		var limit = item.StackLimit(stack.ID)
+		var limit = item.StackLimit(stack)
 		for stack.Count > 0 {
 			var dest = hopperSpace(slots, stack)
 			if dest < 0 {

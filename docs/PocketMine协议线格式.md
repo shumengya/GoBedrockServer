@@ -67,6 +67,16 @@ RakNet 版本 **8** 与游戏协议号 **113** 位于不同层。离线握手依
 
 **玩家位置与出生方块使用不同的 Y。** 例如脚站在 Y=64 方块的顶面，脚底是 65，发给玩家的眼睛位置是 66.62。登录、切维度和重生时，Go 用这个眼睛位置填玩家的 Vec3；世界出生点 BlockPos 仍是存档里的整格坐标。重生流程可对照[参考端 Player.php](../pocketmine服务器参考/src/pocketmine/Player.php) 构造 `RespawnPacket` 时加的 `baseOffset`。
 
+### 从装桶到喝奶
+
+桶的物品 ID 是十进制 **325**。Slot 的 meta 区分空桶（0）、奶（1）、水（8）、岩浆（10）。对照 [Bucket.php](../pocketmine服务器参考/src/pocketmine/item/Bucket.php) 和 [Player.php](../pocketmine服务器参考/src/pocketmine/Player.php)，三种动作的入口不同：
+
+| 玩家动作 | 客户端 → 服务端 | 服务端如何同步 |
+|---|---|---|
+| 装水或岩浆、倒桶 | `23 UseItem` 指明点击的方块、面和手持物。装桶看被点击格是否为液位 0；倒桶看该面相邻格能否被替换 | `16 UpdateBlock` 同步方块；`19 LevelSoundEvent` 的声音编号分别为装水 81、装岩浆 82、倒水 83、倒岩浆 84（均为十进制）。下界倒水只结算桶，不生成水源 |
+| 对牛挤奶 | `21 Interact`：动作 Byte = 1，然后是目标 EntityId。这里指向牛或哞菇的实体，而非方块坐标 | 服务端结算背包；`19` 的声音编号为 43 |
+| 喝完牛奶 | `24 PlayerAction`：EntityId、动作 VarInt = 5（释放手持物）、BlockPos、面 VarInt。服务端核对当前手持奶桶 | `1C EntityEvent` 的事件 9 表示使用动画；每个被移除的效果分别发 `1D MobEffect` 操作 3。吸收生命值变更另由 `1E UpdateAttributes` 同步 |
+
 ### 3A 区块列里的光照
 
 `FullChunkData` 的列数据从一个子区块数量字节开始，按 Y 从低到高排列。每个版本 0 的子区块占 **10,241 字节**：

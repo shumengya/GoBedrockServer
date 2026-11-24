@@ -16,6 +16,10 @@ func (srv *Server) useItemOnBlock(player *Player, pkt *packets.UseItemPacket, he
 	defer srv.blockMu.Unlock()
 	var blockWorld = srv.playerWorld(player)
 	var worldName string = srv.playerWorldName(player)
+	if held.ID == blockrule.ItemBucket {
+		srv.useBucketLocked(player, blockWorld, pkt, held)
+		return true
+	}
 	var result, handled = blockrule.UseItem(
 		peekView{target: blockWorld},
 		blockrule.ItemUseRequest{
