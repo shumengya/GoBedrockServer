@@ -44,6 +44,9 @@ func LoadWorldMeta(path string, def WorldDefaults) (WorldMeta, error) {
 			if gen == world.GeneratorNormal {
 				meta.Spawn = world.NormalSpawn(def.Seed, def.SpawnX, def.SpawnZ)
 			}
+			if gen == world.GeneratorNetherTerrain || gen == world.GeneratorEndTerrain {
+				meta.Spawn = world.DimensionSpawn(gen, def.Seed)
+			}
 			if err := SaveWorldMeta(path, meta); err != nil {
 				return WorldMeta{}, err
 			}

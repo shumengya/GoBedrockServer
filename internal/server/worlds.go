@@ -13,7 +13,7 @@ func startGameGenerator(w *world.World) int32 {
 		return 2
 	}
 	switch w.Generator {
-	case world.GeneratorNormal, world.GeneratorSky, world.GeneratorOcean, world.GeneratorNether, world.GeneratorEnd:
+	case world.GeneratorNormal, world.GeneratorSky, world.GeneratorOcean, world.GeneratorNether, world.GeneratorEnd, world.GeneratorNetherTerrain, world.GeneratorEndTerrain:
 		return 1
 	default:
 		return 2

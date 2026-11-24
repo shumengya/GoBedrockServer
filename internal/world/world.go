@@ -261,9 +261,9 @@ func (w *World) ProtocolDimension() int32 {
 		return 0
 	}
 	switch w.Generator {
-	case GeneratorNether:
+	case GeneratorNether, GeneratorNetherTerrain:
 		return 1
-	case GeneratorEnd:
+	case GeneratorEnd, GeneratorEndTerrain:
 		return 2
 	default:
 		return 0

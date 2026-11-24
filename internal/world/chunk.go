@@ -33,12 +33,14 @@ const (
 	BlockNetherrack    = 87
 	BlockEndStone      = 121
 
-	GeneratorFlat   = "flat"
-	GeneratorNormal = "normal"
-	GeneratorSky    = "sky"
-	GeneratorOcean  = "ocean"
-	GeneratorNether = "nether"
-	GeneratorEnd    = "end"
+	GeneratorFlat          = "flat"
+	GeneratorNormal        = "normal"
+	GeneratorSky           = "sky"
+	GeneratorOcean         = "ocean"
+	GeneratorNether        = "nether"
+	GeneratorEnd           = "end"
+	GeneratorNetherTerrain = "nether_terrain"
+	GeneratorEndTerrain    = "end_terrain"
 
 	spawnPlatformY = 64
 
@@ -269,6 +271,8 @@ func (c *Chunk) generate(gen string, seed, cx, cz int32) {
 		c.fillOcean(cx, cz)
 	case GeneratorNether:
 		c.fillNether(cx, cz)
+	case GeneratorNetherTerrain, GeneratorEndTerrain:
+		c.fillDimension(gen, seed, cx, cz)
 	case GeneratorEnd:
 		c.fillEnd(cx, cz)
 	default:

@@ -2,6 +2,43 @@ package server
 
 import "testing"
 import "go-mc-server/config"
+import "go-mc-server/internal/storage"
+import "go-mc-server/internal/world"
+
+// 新维度从主世界取种子并有安全落点，已有的虚空岛存档则保留原生成器和出生点。
+func TestDimensionTerrainOnCreation(test *testing.T) {
+	var cfg = config.Default()
+	cfg.DataDir = test.TempDir()
+	cfg.ServerDir = test.TempDir()
+	cfg.LevelSeed = -794
+	var first = New(cfg)
+	var names = [2]string{"nether", "end"}
+	var newTypes = [2]string{world.GeneratorNetherTerrain, world.GeneratorEndTerrain}
+	var index = 0
+	for index = 0; index < len(names); index++ {
+		var dimension = first.worlds[names[index]]
+		var floor, _ = dimension.GetBlock(dimension.SpawnX, dimension.SpawnY-1, dimension.SpawnZ)
+		var feet, _ = dimension.GetBlock(dimension.SpawnX, dimension.SpawnY, dimension.SpawnZ)
+		var head, _ = dimension.GetBlock(dimension.SpawnX, dimension.SpawnY+1, dimension.SpawnZ)
+		if dimension.Generator != newTypes[index] || dimension.Seed != -794 || dimension.ProtocolDimension() != int32(index+1) || startGameGenerator(dimension) != 1 || floor == 0 || floor == 11 || feet != 0 || head != 0 {
+			test.Fatalf("期望维度 %d 使用主世界种子并安全落脚，实际 %s / %d / %d / %d,%d,%d", index+1, dimension.Generator, dimension.Seed, dimension.ProtocolDimension(), floor, feet, head)
+		}
+		var legacy = storage.WorldMeta{Name: names[index], Seed: 9, Spawn: [3]int32{8, 64, 8}, Generator: names[index]}
+		var err = storage.SaveWorldMeta(storage.WorldMetaPath(cfg.DataDir, names[index]), legacy)
+		if err != nil {
+			test.Fatal(err)
+		}
+	}
+	cfg.LevelSeed = 333
+	var restart = New(cfg)
+	for index = 0; index < len(names); index++ {
+		var dimension = restart.worlds[names[index]]
+		var outside, _ = dimension.GetBlock(32, 32, 0)
+		if dimension.Generator != names[index] || dimension.Seed != 9 || dimension.SpawnY != 64 || outside != 0 {
+			test.Fatalf("期望旧维度保留虚空岛，实际 %s / %d / %d / %d", dimension.Generator, dimension.Seed, dimension.SpawnY, outside)
+		}
+	}
+}
 
 // 新自然世界在陆地上出生，重启沿用存档；新平坦世界向客户端报告不同的生成器。
 func TestWorldTypeOnCreation(test *testing.T) {

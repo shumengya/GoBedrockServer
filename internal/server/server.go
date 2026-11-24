@@ -125,8 +125,8 @@ func New(cfg *config.Config) *Server {
 	}
 	openTemplate("sky", world.GeneratorSky)
 	openTemplate("ocean", world.GeneratorOcean)
-	openTemplate("nether", world.GeneratorNether)
-	openTemplate("end", world.GeneratorEnd)
+	openWorld(storage.WorldDefaults{Name: "nether", Generator: world.GeneratorNetherTerrain, Seed: w.Seed})
+	openWorld(storage.WorldDefaults{Name: "end", Generator: world.GeneratorEndTerrain, Seed: w.Seed})
 	srv := &Server{
 		cfg:           cfg,
 		world:         w,

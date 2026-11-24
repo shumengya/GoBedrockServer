@@ -121,19 +121,12 @@ func (column *Chunk) fillBaseTerrain(seed, chunkX, chunkZ int32) {
 	var base, temp, rain = terrainNoise(seed)
 	var baseX, baseZ = float64(chunkX) * 16, float64(chunkZ) * 16
 	var climate = [20][20]terrainBiome{}
-	var grid = [5][5][17]float64{}
+	var grid = sampleTerrainGrid(&base, baseX, baseZ, 1)
 	var col, row, level = 0, 0, 0
 	for col = 0; col < 20; col++ {
 		for row = 0; row < 20; row++ {
 			var posX, posZ = baseX + float64(col-2), baseZ + float64(row-2)
 			climate[col][row] = selectClimate(temp.climate(posX, posZ), rain.climate(posX, posZ))
-		}
-	}
-	for col = 0; col < 5; col++ {
-		for row = 0; row < 5; row++ {
-			for level = 0; level < 17; level++ {
-				grid[col][row][level] = base.density(baseX+float64(col*4), float64(level*8), baseZ+float64(row*4))
-			}
 		}
 	}
 	for col = 0; col < 16; col++ {
@@ -149,12 +142,7 @@ func (column *Chunk) fillBaseTerrain(seed, chunkX, chunkZ int32) {
 					high += adjacent.high * terrainWeights[offX][offZ]
 				}
 			}
-			var heights = [17]float64{}
-			var cellX, cellZ = col / 4, row / 4
-			var fracX, fracZ = float64(col%4) / 4, float64(row%4) / 4
-			for level = 0; level < 17; level++ {
-				heights[level] = terrainMix(terrainMix(grid[cellX][cellZ][level], grid[cellX+1][cellZ][level], fracX), terrainMix(grid[cellX][cellZ+1][level], grid[cellX+1][cellZ+1][level], fracX), fracZ)
-			}
+			var heights = grid.profile(col, row)
 			var surface = -1
 			for level = 127; level > 0; level-- {
 				var adjustment = min(2*(high-float64(level))/(high-low)-1, .4+max(0, float64(level)-low+10)/10)
