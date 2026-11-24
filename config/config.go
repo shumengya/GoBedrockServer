@@ -26,6 +26,7 @@ type Config struct {
 	SpawnY            int
 	SpawnZ            int
 	WorldName         string
+	ExtraWorlds       []WorldSpec
 	LevelSeed         int
 	LevelType         string
 	DataDir           string
@@ -65,6 +66,7 @@ func Default() *Config {
 		SpawnY:            5,
 		SpawnZ:            0,
 		WorldName:         "world",
+		ExtraWorlds:       []WorldSpec{{"sky", "sky"}, {"ocean", "ocean"}, {"nether", "nether"}, {"end", "end"}},
 		LevelSeed:         12345,
 		LevelType:         "flat",
 		DataDir:           "data",

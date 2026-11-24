@@ -307,12 +307,12 @@ func TestParseWorldName(t *testing.T) {
 		{"主世界", "world", "world"},
 	}
 	for _, c := range cases {
-		got, err := ParseWorldName(c.in, c.def)
+		got, err := ParseWorldName(c.in, c.def, []string{c.def, "sky", "ocean", "nether", "end"})
 		if err != nil || got != c.want {
 			t.Fatalf("%s def=%s -> %s %v want %s", c.in, c.def, got, err, c.want)
 		}
 	}
-	if _, err := ParseWorldName("nope", "world"); err == nil {
+	if _, err := ParseWorldName("nope", "world", []string{"world"}); err == nil {
 		t.Fatal("unknown world must be rejected")
 	}
 }
@@ -325,6 +325,7 @@ func TestWorldCommand(t *testing.T) {
 	ctx := &Context{
 		Username:     "Steve",
 		DefaultWorld: "world",
+		Admin:        &fakeAdmin{worlds: []string{"world", "sky", "ocean", "nether", "end"}},
 		Reply:        func(msg string) { replies = append(replies, msg) },
 		FindPlayer: func(name string) (InventoryPlayer, bool) {
 			if name == "@s" || name == "Steve" {
@@ -365,6 +366,17 @@ func TestWorldCommand(t *testing.T) {
 	m.Dispatch(ctx, "world nope")
 	if self.world != "world" {
 		t.Fatal("unknown world must not transfer")
+	}
+	ctx.Admin = &fakeAdmin{worlds: []string{"Lobby", "Quarry"}}
+	ctx.DefaultWorld = "Lobby"
+	m.Dispatch(ctx, "world")
+	if replies[len(replies)-1] != "可用世界: Lobby, Quarry" {
+		t.Fatalf("期望列出已加载目录，实际 %s", replies[len(replies)-1])
+	}
+	m.Dispatch(ctx, "world quarry")
+	m.Dispatch(ctx, "world 下界")
+	if self.world != "Quarry" || !strings.Contains(replies[len(replies)-1], "未知世界") {
+		t.Fatalf("期望传送到 Quarry 后拒绝未加载的下界，实际 %s / %v", self.world, replies)
 	}
 }
 

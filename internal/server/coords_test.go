@@ -9,7 +9,7 @@ func TestCoordsText(test *testing.T) {
 	var player *Player = newPlayer(&network.Session{}, 1)
 	player.SetCoordsEnabled(true)
 	player.UpdatePosition(12.5, 64.0, -3.25, 0, 0, true)
-	var text string = coordsText(player, "world")
+	var text string = coordsText(player, "world", "world")
 	if text == "" {
 		test.Fatal("坐标文本不该为空")
 	}
@@ -21,11 +21,11 @@ func TestCoordsText(test *testing.T) {
 // 世界名映射：地狱/末地各有中文名，别把坐标标成主世界。
 func TestCoordsWorldLabel(test *testing.T) {
 	var player *Player = newPlayer(&network.Session{}, 1)
-	var netherText string = coordsText(player, "nether")
+	var netherText string = coordsText(player, "nether", "world")
 	if !strings.Contains(netherText, "地狱") {
 		test.Fatalf("地狱世界名不对: %q", netherText)
 	}
-	var endText string = coordsText(player, "end")
+	var endText string = coordsText(player, "end", "world")
 	if !strings.Contains(endText, "末地") {
 		test.Fatalf("末地世界名不对: %q", endText)
 	}

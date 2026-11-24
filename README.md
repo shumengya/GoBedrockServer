@@ -37,7 +37,7 @@ go build -o go-mc-server.exe .
 - 白名单、封禁（名字 / IP）、人数上限；被拒时客户端能看到原因
 
 **世界**
-- 多世界：`world`（超平坦）/ `sky` / `ocean` / `nether` / `end`，`/world` 切换
+- 多世界：`/world` 列出已加载世界，`/world <名称>` 切换。默认仍加载原来的五个世界；在 `server.properties` 设置 `level-name=Lobby`、`extra-worlds=Mines:normal,Islands:sky` 可改为大厅、矿区和空岛。[配置与重启行为](docs/持久化存储.md#选择启动时加载的世界)
 - 新建自然地形主世界：在 `server.properties` 写 `level-type=normal`，用 `level-seed` 指定种子（默认 `12345`）。默认类型仍是 `flat`。已有世界沿用存档中的类型和种子；[生成规则](docs/世界生成.md)。
 - 区块按距离排队发送，视距上限可配置（`view-distance`，2–32）
 - 昼夜循环：每世界独立时钟，可 `/time` 调整或冻结；例如 `/time all set noon` 同时设置全部世界，`/time all query` 分世界查询

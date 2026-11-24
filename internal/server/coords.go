@@ -20,7 +20,7 @@ func (srv *Server) sendCoords(player *Player) {
 	}
 	var text string = ""
 	if player.CoordsEnabled() {
-		text = coordsText(player, srv.playerWorldName(player))
+		text = coordsText(player, srv.playerWorldName(player), srv.world.Name)
 	}
 	player.Session.SendPacket(&packets.TextPacket{
 		Type:    protocol.TextTypeTip,
@@ -29,14 +29,14 @@ func (srv *Server) sendCoords(player *Player) {
 }
 
 // coordsText 拼出快捷栏上方那行字；关掉时返回空串，把残留内容清掉。
-func coordsText(player *Player, worldName string) string {
+func coordsText(player *Player, worldName, defaultWorld string) string {
 	var posX float32 = 0
 	var posY float32 = 0
 	var posZ float32 = 0
 	player.mu.RLock()
 	posX, posY, posZ = player.X, player.Y, player.Z
 	player.mu.RUnlock()
-	var label string = command.WorldDisplayName(worldName, "world")
+	var label string = command.WorldDisplayName(worldName, defaultWorld)
 	return fmt.Sprintf("§7%s §fX: %.1f §7Y: %.1f §7Z: %.1f", label, posX, posY, posZ)
 }
 

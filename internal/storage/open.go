@@ -24,7 +24,8 @@ func OpenWorld(dataDir string, definitions WorldDefaults) (*world.World, error) 
 	if err != nil {
 		return nil, fmt.Errorf("读取世界元数据 %s: %w", definitions.Name, err)
 	}
-	var loaded *world.World = world.New(meta.Name)
+	// 配置指定的目录才是当前世界名，复制或改名的存档可能仍记录原来的名字。
+	var loaded *world.World = world.New(definitions.Name)
 	loaded.Seed = meta.Seed
 	loaded.SetTimeTicks(meta.Time)
 	loaded.SetTimeStopped(meta.TimeStopped)

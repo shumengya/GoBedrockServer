@@ -17,6 +17,7 @@ type fakeAdmin struct {
 	positions  map[string][3]float32
 	ticks      int32
 	whitelist  []string
+	worlds     []string
 }
 
 func (fake *fakeAdmin) note(format string, args ...any) {
@@ -32,6 +33,7 @@ func (fake *fakeAdmin) resolve(name string) (string, error) {
 }
 
 func (fake *fakeAdmin) OnlinePlayers() []string { return fake.online }
+func (fake *fakeAdmin) WorldNames() []string    { return fake.worlds }
 func (fake *fakeAdmin) MaxPlayers() int         { return fake.maxPlayers }
 
 func (fake *fakeAdmin) Kick(name string, reason string) (string, error) {

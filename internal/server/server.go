@@ -113,20 +113,23 @@ func New(cfg *config.Config) *Server {
 		SpawnZ:    int32(cfg.SpawnZ),
 		Generator: cfg.LevelType,
 	})
-	openTemplate := func(name, gen string) {
-		openWorld(storage.WorldDefaults{
-			Name:      name,
-			Seed:      12345,
-			SpawnX:    8,
-			SpawnY:    64,
-			SpawnZ:    8,
-			Generator: gen,
-		})
+	var index = 0
+	for index = 0; index < len(cfg.ExtraWorlds); index++ {
+		var spec = cfg.ExtraWorlds[index]
+		if strings.EqualFold(spec.Name, defaultName) {
+			continue
+		}
+		var def = storage.WorldDefaults{Name: spec.Name, Generator: spec.Generator, Seed: w.Seed, SpawnY: 5}
+		switch spec.Generator {
+		case world.GeneratorSky, world.GeneratorOcean:
+			def.Seed, def.SpawnX, def.SpawnY, def.SpawnZ = 12345, 8, 64, 8
+		case "nether":
+			def.Generator = world.GeneratorNetherTerrain
+		case "end":
+			def.Generator = world.GeneratorEndTerrain
+		}
+		openWorld(def)
 	}
-	openTemplate("sky", world.GeneratorSky)
-	openTemplate("ocean", world.GeneratorOcean)
-	openWorld(storage.WorldDefaults{Name: "nether", Generator: world.GeneratorNetherTerrain, Seed: w.Seed})
-	openWorld(storage.WorldDefaults{Name: "end", Generator: world.GeneratorEndTerrain, Seed: w.Seed})
 	srv := &Server{
 		cfg:           cfg,
 		world:         w,
@@ -537,10 +540,11 @@ func (srv *Server) spawnPlayer(sess *network.Session) {
 			logger.Error("server", "写入新玩家存档失败: %v", err)
 		}
 	}
-	w = srv.worldByName(p.WorldName)
+	w = srv.worlds[p.WorldName]
 	if w == nil {
 		w = srv.world
 		p.WorldName = w.Name
+		p.X, p.Y, p.Z = float32(w.SpawnX)+0.5, spawnEyeY(w), float32(w.SpawnZ)+0.5
 	}
 	p.Dimension = w.ProtocolDimension()
 	srv.mu.Lock()

@@ -14,9 +14,13 @@ func (WorldCommand) Usage() string       { return "/world <世界名>" }
 func (WorldCommand) Description() string { return "传送到指定世界" }
 
 func (c WorldCommand) Execute(ctx *Context, args []string) error {
+	if ctx.Admin == nil {
+		return fmt.Errorf("命令上下文未就绪")
+	}
+	var worlds = ctx.Admin.WorldNames()
 	if len(args) < 1 {
 		if ctx.Reply != nil {
-			ctx.Reply("可用世界: overworld, sky, ocean, nether, end")
+			ctx.Reply("可用世界: " + strings.Join(worlds, ", "))
 		}
 		return nil
 	}
@@ -27,7 +31,7 @@ func (c WorldCommand) Execute(ctx *Context, args []string) error {
 	if def == "" {
 		def = "world"
 	}
-	disk, err := ParseWorldName(args[0], def)
+	disk, err := ParseWorldName(args[0], def, worlds)
 	if err != nil {
 		return err
 	}
@@ -45,27 +49,44 @@ func (c WorldCommand) Execute(ctx *Context, args []string) error {
 }
 
 // ParseWorldName maps command aliases to a disk world name.
-func ParseWorldName(s, defaultWorld string) (string, error) {
+func ParseWorldName(s, defaultWorld string, worlds []string) (string, error) {
+	var input = strings.TrimSpace(s)
 	if defaultWorld == "" {
 		defaultWorld = "world"
 	}
-	switch strings.ToLower(strings.TrimSpace(s)) {
+	var alias = ""
+	switch strings.ToLower(input) {
 	case "overworld", "world", "flat", "超平坦", "主世界":
-		return defaultWorld, nil
+		alias = defaultWorld
 	case "sky", "空岛":
-		return "sky", nil
+		alias = "sky"
 	case "ocean", "海洋":
-		return "ocean", nil
+		alias = "ocean"
 	case "nether", "hell", "地狱", "下界":
-		return "nether", nil
+		alias = "nether"
 	case "end", "the_end", "theend", "末地":
-		return "end", nil
-	default:
-		return "", fmt.Errorf("未知世界: %s", s)
+		alias = "end"
 	}
+	var resolved = ""
+	var index = 0
+	for index = 0; index < len(worlds); index++ {
+		if strings.EqualFold(input, worlds[index]) {
+			return worlds[index], nil
+		}
+		if strings.EqualFold(alias, worlds[index]) {
+			resolved = worlds[index]
+		}
+	}
+	if resolved != "" {
+		return resolved, nil
+	}
+	return "", fmt.Errorf("未知世界: %s", input)
 }
 
 func WorldDisplayName(disk, defaultWorld string) string {
+	if disk == defaultWorld || disk == "" {
+		return "主世界"
+	}
 	switch disk {
 	case "sky":
 		return "空岛"
@@ -76,6 +97,6 @@ func WorldDisplayName(disk, defaultWorld string) string {
 	case "end":
 		return "末地"
 	default:
-		return "主世界"
+		return disk
 	}
 }

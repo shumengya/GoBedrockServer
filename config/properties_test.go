@@ -2,6 +2,7 @@ package config
 
 import "os"
 import "path/filepath"
+import "reflect"
 import "strings"
 import "testing"
 
@@ -64,7 +65,7 @@ func TestApplyPropertiesInvalidKeepsDefaults(test *testing.T) {
 	if len(warnings) != 7 {
 		test.Fatalf("7 项非法应有 7 条警告，实际 %d: %v", len(warnings), warnings)
 	}
-	if *cfg != defaults {
+	if !reflect.DeepEqual(*cfg, defaults) {
 		test.Fatalf("非法值不该改动配置: %+v", cfg)
 	}
 }
@@ -104,7 +105,7 @@ func TestPropertiesTextRoundTrip(test *testing.T) {
 	if len(warnings) != 0 {
 		test.Fatalf("生成的文件自己读回来不该有警告: %v", warnings)
 	}
-	if *loaded != *source {
+	if !reflect.DeepEqual(*loaded, *source) {
 		test.Fatalf("往返不一致:\n got %+v\nwant %+v", loaded, source)
 	}
 }
@@ -122,7 +123,7 @@ func TestLoadPropertiesCreatesMissingFile(test *testing.T) {
 	}
 	var again *Config = Default()
 	warnings, err = LoadProperties(path, again)
-	if err != nil || len(warnings) != 0 || *again != *cfg {
+	if err != nil || len(warnings) != 0 || !reflect.DeepEqual(*again, *cfg) {
 		test.Fatalf("第二次读取应无警告且配置一致: err=%v warnings=%v", err, warnings)
 	}
 }

@@ -121,6 +121,23 @@ func applyChoice(values map[string]string, key string, parse func(string) (int, 
 // 非法值只警告并保持原值：配置文件手滑写错一项，不该让整个服务器起不来。
 func (c *Config) ApplyProperties(values map[string]string) []string {
 	var warnings []string = nil
+	var name, named = values["level-name"]
+	if named {
+		if validWorldName(name) {
+			c.WorldName = name
+		} else {
+			warnings = append(warnings, fmt.Sprintf("level-name=%q 不能作为世界目录，沿用 %s", name, c.WorldName))
+		}
+	}
+	var extra, specified = values["extra-worlds"]
+	if specified {
+		var specs, err = parseExtraWorlds(extra)
+		if err != nil {
+			warnings = append(warnings, fmt.Sprintf("extra-worlds: %v，沿用原列表", err))
+		} else {
+			c.ExtraWorlds = specs
+		}
+	}
 	warnings = appendIf(warnings, applyInt(values, "server-port", 1, 65535, &c.Port))
 	warnings = appendIf(warnings, applyInt(values, "level-seed", -2147483648, 2147483647, &c.LevelSeed))
 	var levelType, hasType = values["level-type"]
@@ -175,6 +192,14 @@ func (c *Config) PropertiesText() string {
 	builder.WriteString("# 修改后重启生效；命令行参数（如 -port）优先于本文件。\n\n")
 	writeProperty(&builder, "服务器名称，显示在服务器列表里（不要写分号）", "motd", c.MOTD)
 	writeProperty(&builder, "UDP 端口", "server-port", strconv.Itoa(c.Port))
+	writeProperty(&builder, "主世界存档目录名", "level-name", c.WorldName)
+	var entries = make([]string, len(c.ExtraWorlds))
+	var index = 0
+	for index = 0; index < len(entries); index++ {
+		var spec = c.ExtraWorlds[index]
+		entries[index] = spec.Name + ":" + spec.Generator
+	}
+	writeProperty(&builder, "额外世界：目录名:地形，逗号分隔；留空只加载主世界", "extra-worlds", strings.Join(entries, ","))
 	writeProperty(&builder, "新主世界种子（有符号 32 位整数），已有世界沿用存档", "level-seed", strconv.Itoa(c.LevelSeed))
 	writeProperty(&builder, "新主世界地形：flat 超平坦，normal 自然地形", "level-type", c.LevelType)
 	writeProperty(&builder, "绑定地址，0.0.0.0 表示所有网卡", "server-ip", c.Host)
