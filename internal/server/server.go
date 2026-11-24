@@ -156,12 +156,12 @@ func New(cfg *config.Config) *Server {
 	}
 	srv.rakSrv = raknet.NewServer(cfg, srv.onNewRakSession, serverAdmin{srv: srv})
 	for _, nw := range worlds {
-		list, err := storage.LoadDroppedItems(cfg.DataDir, nw.Name)
+		list, err := storage.LoadEntities(cfg.DataDir, nw.Name)
 		if err != nil {
-			logger.Error("server", "读取世界 %s 掉落物失败: %v", nw.Name, err)
+			logger.Error("server", "读取世界 %s 实体失败: %v", nw.Name, err)
 			continue
 		}
-		srv.restoreDroppedItems(nw.Name, list)
+		srv.restoreEntities(nw.Name, list)
 	}
 	return srv
 }
@@ -332,26 +332,31 @@ func (srv *Server) persistWorld(w *world.World) error {
 	// 掉落物进入漏斗前后只能出现在一份快照里。锁只覆盖内存读取，不覆盖压缩和写盘。
 	srv.blockMu.Lock()
 	var tiles = w.SnapshotTiles()
-	var drops = srv.droppedSnapshot(w.Name)
+	var entities = srv.entitySnapshot(w.Name)
 	srv.blockMu.Unlock()
 	if err := storage.SaveWorldWithTiles(srv.cfg.DataDir, w, tiles); err != nil {
 		return err
 	}
-	return storage.SaveDroppedItems(srv.cfg.DataDir, w.Name, drops)
+	return storage.SaveEntities(srv.cfg.DataDir, w.Name, entities)
 }
 
-func (srv *Server) droppedSnapshot(worldName string) []storage.DroppedItemData {
+func (srv *Server) entitySnapshot(worldName string) []storage.EntityData {
 	srv.mu.RLock()
 	defer srv.mu.RUnlock()
-	out := make([]storage.DroppedItemData, 0)
+	out := make([]storage.EntityData, 0)
 	for _, e := range srv.entities {
-		if !e.IsDroppedItem() {
+		// 下落方块落地后会变成区块数据，不能和独立写盘的区块各保存一份。
+		if e.IsFallingBlock() {
 			continue
 		}
 		if !sameWorldName(e.WorldName, worldName, srv.world.Name) {
 			continue
 		}
-		out = append(out, storage.DroppedItemData{
+		out = append(out, storage.EntityData{
+			NetworkID:   e.Type.NetworkID,
+			CustomName:  e.CustomName,
+			Yaw:         e.Yaw,
+			Pitch:       e.Pitch,
 			ID:          e.Item.ID,
 			Meta:        e.Item.Meta,
 			Count:       e.Item.Count,
@@ -369,29 +374,43 @@ func (srv *Server) droppedSnapshot(worldName string) []storage.DroppedItemData {
 	return out
 }
 
-func (srv *Server) restoreDroppedItems(worldName string, list []storage.DroppedItemData) {
-	t, ok := entity.ByID(entity.NetworkIDItem)
-	if !ok {
-		return
-	}
+func (srv *Server) restoreEntities(worldName string, list []storage.EntityData) {
 	srv.mu.Lock()
 	defer srv.mu.Unlock()
-	for _, d := range list {
-		item := storage.ItemFromDrop(d)
-		if item.IsAir() {
+	var index = 0
+	for index = 0; index < len(list); index++ {
+		var d = list[index]
+		var networkID = d.NetworkID
+		if networkID == 0 {
+			networkID = entity.NetworkIDItem
+		}
+		var kind, known = entity.ByID(networkID)
+		if !known {
 			continue
 		}
-		id := atomic.AddInt64(&srv.entityIDCounter, 1)
+		var stack = protocol.Air()
+		if networkID == entity.NetworkIDItem {
+			stack = storage.ItemFromDrop(d)
+			if stack.IsAir() {
+				continue
+			}
+		} else if !kind.CanSummon {
+			continue
+		}
+		var id = atomic.AddInt64(&srv.entityIDCounter, 1)
 		srv.entities[id] = &entity.Instance{
 			RuntimeID:   id,
-			Type:        t,
+			Type:        kind,
+			CustomName:  d.CustomName,
+			Yaw:         d.Yaw,
+			Pitch:       d.Pitch,
 			X:           d.X,
 			Y:           d.Y,
 			Z:           d.Z,
 			SpeedX:      d.SpeedX,
 			SpeedY:      d.SpeedY,
 			SpeedZ:      d.SpeedZ,
-			Item:        item,
+			Item:        stack,
 			PickupDelay: d.PickupDelay,
 			Age:         d.Age,
 			WorldName:   worldName,

@@ -346,27 +346,27 @@ func TestTilesJSONRoundtrip(test *testing.T) {
 
 func TestDroppedItemsJSONRoundtrip(test *testing.T) {
 	var dataDir string = test.TempDir()
-	var input []DroppedItemData = []DroppedItemData{{
+	var input []EntityData = []EntityData{{
 		ID: 1, Count: 8,
 		X: 1.5, Y: 5.2, Z: -3,
 		SpeedY:      0.1,
 		PickupDelay: 10,
 		Age:         3,
 	}}
-	var err error = SaveDroppedItems(dataDir, "test", input)
+	var err error = SaveEntities(dataDir, "test", input)
 	if err != nil {
 		test.Fatal(err)
 	}
-	var output []DroppedItemData = nil
-	output, err = LoadDroppedItems(dataDir, "test")
+	var output []EntityData = nil
+	output, err = LoadEntities(dataDir, "test")
 	if err != nil {
 		test.Fatal(err)
 	}
 	if len(output) != 1 || output[0].ID != 1 || output[0].Count != 8 || output[0].Y != 5.2 || output[0].Age != 3 {
 		test.Fatalf("%+v", output)
 	}
-	var missing []DroppedItemData = nil
-	missing, err = LoadDroppedItems(dataDir, "empty-world")
+	var missing []EntityData = nil
+	missing, err = LoadEntities(dataDir, "empty-world")
 	if err != nil || missing != nil {
 		test.Fatalf("missing file should be empty: %v %v", missing, err)
 	}

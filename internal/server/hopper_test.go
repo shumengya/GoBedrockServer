@@ -179,7 +179,7 @@ func TestHopperPickupDuringSave(test *testing.T) {
 	if tile.Items[0].Count != 3 || len(fixture.srv.entities) != 0 {
 		test.Fatal("期望存盘时已吸入掉落物，实际未触发")
 	}
-	var drops, dropErr = storage.LoadDroppedItems(folder, level.Name)
+	var drops, dropErr = storage.LoadEntities(folder, level.Name)
 	var tiles, tileErr = storage.LoadTiles(folder, level.Name)
 	if dropErr != nil || tileErr != nil || len(tiles) != 1 || len(drops) != 1 || drops[0].Count != 3 || !bytes.Equal(storage.ItemFromDrop(drops[0]).NBT, stack.NBT) || !storage.WorldTilesFromRecords(tiles)[0].Items[0].IsAir() {
 		test.Fatalf("期望磁盘仍为拾取前的完整一份，实际 %+v / %+v / %v / %v", drops, tiles, dropErr, tileErr)
