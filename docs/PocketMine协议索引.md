@@ -3,6 +3,7 @@
 按十六进制 ID 排列。依据本地 [ProtocolInfo.php](../pocketmine服务器参考/src/pocketmine/network/mcpe/protocol/ProtocolInfo.php)：主协议 **113**，接受 **110、111、112、113**。这里描述这份参考端，不是新版 Bedrock 的包表，也不保证四个版本的每处细节相同。
 
 - 看线上字段、字节序和传输层：[协议线格式](PocketMine协议线格式.md)。
+- 查磁盘里的地图数据，以及它与 FullChunkData 的区别：[地图存档格式](PocketMine地图存档格式.md)。
 - 查物品 Slot 字节示例、窗口号、快捷栏映射及配方条目：[背包与合成协议](PocketMine背包与合成协议.md)。
 - 查实体元数据类型、潜行标志的字节示例，以及生成包和更新包不同的属性顺序：[实体协议](PocketMine实体协议.md)。
 - 看玩家何时收发这些包：[登录与收发包流程](登录与收发包流程.md)。
