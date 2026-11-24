@@ -44,3 +44,9 @@
 两处条数都是 UVarInt，名称都是 String，数值都是 F32。若生命条读出来异常，先核对实际包号，以及是否把生成包的属性解码器复用到了更新包。金苹果同时涉及两条独立信息：效果剩余时间走 `1D MobEffect`，剩余吸收血量走 `1E UpdateAttributes` 的 `minecraft:absorption`。见[食物效果示例](PocketMine协议线格式.md#从食物到-mobeffect)和[属性更新编码器](../pocketmine服务器参考/src/pocketmine/network/mcpe/protocol/UpdateAttributesPacket.php)。
 
 **Go 实现范围：** [AddEntity](../internal/protocol/packets/add_entity.go) 发包时写空属性和空关联列表，解码只读到元数据条数；[元数据编码器](../internal/protocol/packets/entity_metadata.go) 支持上表的标量，尚不能写 SLOT、POS 或任意三分量的 VECTOR3F。[UpdateAttributes](../internal/protocol/packets/update_attributes.go) 已实现发送；其空的 Decode 方法不能用于解析抓包。
+
+## 刷怪蛋：从物品 meta 到实体名
+
+客户端用 `23 UseItem` 指定被点击的方块和面；刷怪蛋的物品 ID 是 383，**物品 meta** 决定实体类型。以牛为例，`383:11` 中的 11 是种类，不是这头牛的实体 ID。服务端在该面相邻格的水平中心生成实体，Y 是邻格底面。创造栏中全部 41 种蛋使用同一流程。
+
+服务端向同世界玩家发 `0D AddEntity`。包内另分配实体 ID，类型字段写 UVarInt 11。命名蛋的名字从 Slot 固定宽度小端 NBT 的 `display.Name` 读取，在出生包里改写为**元数据键 4、类型 4（String）**。后加入的玩家同样通过出生包收到名字。实体名字是否始终可见还受 flags 控制，名称字段本身不强制显示。参见 [SpawnEgg.php](../pocketmine服务器参考/src/pocketmine/item/SpawnEgg.php) 和 [Go 实现](../internal/server/spawn_egg.go)。

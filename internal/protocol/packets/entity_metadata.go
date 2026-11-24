@@ -38,12 +38,12 @@ type MetadataEntry struct {
 }
 
 // DefaultEntityMetadata matches Entity.php $dataProperties at spawn.
-func DefaultEntityMetadata() []MetadataEntry {
+func DefaultEntityMetadata(name string) []MetadataEntry {
 	return []MetadataEntry{
 		{Key: EntityDataFlags, Type: EntityDataTypeLong, Long: 0},
 		{Key: EntityDataAir, Type: EntityDataTypeShort, Short: DefaultAirTicks},
 		{Key: EntityDataMaxAir, Type: EntityDataTypeShort, Short: DefaultAirTicks},
-		{Key: EntityDataNametag, Type: EntityDataTypeString, String: ""},
+		{Key: EntityDataNametag, Type: EntityDataTypeString, String: name},
 		{Key: EntityDataLeadHolder, Type: EntityDataTypeLong, Long: -1},
 		{Key: EntityDataScale, Type: EntityDataTypeFloat, Float: 1},
 	}

@@ -126,7 +126,7 @@ func TestAddEntityEncodeHasTwoEntityIDsAndMetadata(t *testing.T) {
 		EntityRuntimeID: 5,
 		EntityType:      32,
 		X:               1, Y: 2, Z: 3,
-		Metadata: DefaultEntityMetadata(),
+		Metadata: DefaultEntityMetadata(""),
 	}
 	raw, err := EncodePacket(p)
 	if err != nil {

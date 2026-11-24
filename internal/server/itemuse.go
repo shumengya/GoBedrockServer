@@ -20,6 +20,10 @@ func (srv *Server) useItemOnBlock(player *Player, pkt *packets.UseItemPacket, he
 		srv.useBucketLocked(player, blockWorld, pkt, held)
 		return true
 	}
+	if held.ID == itemSpawnEgg {
+		srv.useSpawnEggLocked(player, blockWorld, pkt, held)
+		return true
+	}
 	var result, handled = blockrule.UseItem(
 		peekView{target: blockWorld},
 		blockrule.ItemUseRequest{

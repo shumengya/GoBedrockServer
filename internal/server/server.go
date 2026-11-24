@@ -959,21 +959,23 @@ func (srv *Server) spawnEntity(networkID int32, x, y, z float32, worldName strin
 	if worldName == "" {
 		worldName = srv.world.Name
 	}
-	id := atomic.AddInt64(&srv.entityIDCounter, 1)
-	inst := &entity.Instance{
-		RuntimeID: id,
+	srv.addSummonedEntity(&entity.Instance{
 		Type:      t,
 		X:         x,
 		Y:         y,
 		Z:         z,
 		WorldName: worldName,
-	}
-	srv.mu.Lock()
-	srv.entities[id] = inst
-	srv.mu.Unlock()
-	srv.broadcastInWorld(worldName, addEntityPacket(inst), "")
-	logger.Info("entity", "召唤 %s id=%d 于 (%.1f,%.1f,%.1f) world=%s", t.Name, id, x, y, z, worldName)
+	})
 	return nil
+}
+
+func (srv *Server) addSummonedEntity(inst *entity.Instance) {
+	inst.RuntimeID = atomic.AddInt64(&srv.entityIDCounter, 1)
+	srv.mu.Lock()
+	srv.entities[inst.RuntimeID] = inst
+	srv.mu.Unlock()
+	srv.broadcastInWorld(inst.WorldName, addEntityPacket(inst), "")
+	logger.Info("entity", "召唤 %s id=%d 于 (%.1f,%.1f,%.1f) world=%s", inst.Type.Name, inst.RuntimeID, inst.X, inst.Y, inst.Z, inst.WorldName)
 }
 
 func (srv *Server) sendEntitiesTo(sess *network.Session) {

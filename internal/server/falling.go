@@ -14,7 +14,7 @@ import "go-mc-server/internal/world"
 // entityMetadata 生成出生包里的实体元数据。下落的方块要多带一项 variant：
 // 方块 ID 放低 8 位，方块 meta 放在它上面，客户端据此画出是哪种方块在掉。
 func entityMetadata(instance *entity.Instance) []packets.MetadataEntry {
-	var metadata []packets.MetadataEntry = packets.DefaultEntityMetadata()
+	var metadata []packets.MetadataEntry = packets.DefaultEntityMetadata(instance.CustomName)
 	if instance.IsFallingBlock() {
 		metadata = append(metadata, packets.MetadataEntry{
 			Key:  packets.EntityDataVariant,
