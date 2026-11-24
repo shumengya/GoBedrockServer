@@ -499,9 +499,11 @@ func (srv *Server) spawnPlayer(sess *network.Session) {
 	p.WorldName = w.Name
 	p.Dimension = w.ProtocolDimension()
 	p.X = float32(w.SpawnX) + 0.5
-	p.Y = float32(w.SpawnY) + 1
 	p.Z = float32(w.SpawnZ) + 0.5
 	data, ok, err := storage.LoadPlayer(srv.cfg.DataDir, sess.ClientUUID)
+	if err != nil || !ok {
+		p.Y = spawnEyeY(w)
+	}
 	if err != nil {
 		logger.Error("server", "读取玩家存档 %s 失败: %v", sess.Username, err)
 	} else if ok {

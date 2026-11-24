@@ -173,7 +173,7 @@ func (srv *Server) killPlayer(victim *Player, killer *Player, cause DamageCause)
 	}
 	victim.Session.SendPacket(&packets.RespawnPacket{
 		PositionX: float32(spawnWorld.SpawnX) + 0.5,
-		PositionY: float32(spawnWorld.SpawnY) + 1,
+		PositionY: spawnEyeY(spawnWorld),
 		PositionZ: float32(spawnWorld.SpawnZ) + 0.5,
 	})
 }
@@ -205,7 +205,7 @@ func (srv *Server) respawnPlayer(player *Player) {
 		return
 	}
 	var spawnX float32 = float32(spawnWorld.SpawnX) + 0.5
-	var spawnY float32 = float32(spawnWorld.SpawnY) + 1
+	var spawnY float32 = spawnEyeY(spawnWorld)
 	var spawnZ float32 = float32(spawnWorld.SpawnZ) + 0.5
 	var yaw, pitch = player.Look()
 	player.UpdatePosition(spawnX, spawnY, spawnZ, yaw, pitch, true)

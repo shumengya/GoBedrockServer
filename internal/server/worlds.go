@@ -1,12 +1,23 @@
 package server
 
 import (
+	"go-mc-server/internal/blockrule"
 	"go-mc-server/internal/entity"
 	"go-mc-server/internal/network"
 	"go-mc-server/internal/protocol"
 	"go-mc-server/internal/protocol/packets"
 	"go-mc-server/internal/world"
 )
+
+// 新地形的出生 Y 是脚底的空气格；旧岛存档常把坐标记在地面方块里。
+func spawnEyeY(level *world.World) float32 {
+	var feet = level.SpawnY
+	var id, _ = level.GetBlock(level.SpawnX, feet, level.SpawnZ)
+	if blockrule.IsSolid(id) {
+		feet++
+	}
+	return float32(feet) + playerEyeHeight
+}
 
 func startGameGenerator(w *world.World) int32 {
 	if w == nil {
@@ -138,6 +149,7 @@ func (srv *Server) transferPlayer(p *Player, destName string) bool {
 	// 必须在改 WorldName 之前，才能按旧世界找到要互删的玩家；
 	// 新世界的 AddPlayer 等区块加载完由 finishChunkSpawn 发。
 	srv.hidePlayerInWorld(p, true)
+	var eyeY = spawnEyeY(dest)
 	p.mu.Lock()
 	if p.WorldName == dest.Name {
 		p.mu.Unlock()
@@ -151,7 +163,7 @@ func (srv *Server) transferPlayer(p *Player, destName string) bool {
 	p.WorldName = dest.Name
 	p.Dimension = dest.ProtocolDimension()
 	p.X = float32(dest.SpawnX) + 0.5
-	p.Y = float32(dest.SpawnY) + 1
+	p.Y = eyeY
 	p.Z = float32(dest.SpawnZ) + 0.5
 	sess := p.Session
 	eid := p.EntityRuntimeID
