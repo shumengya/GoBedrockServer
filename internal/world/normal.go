@@ -112,6 +112,12 @@ func terrainNoise(seed int32) (simplex, simplex, simplex) {
 
 // 气候和密度按世界坐标取样；边界网格与相邻区块共享同一组采样点。
 func (column *Chunk) fillNormal(seed, chunkX, chunkZ int32) {
+	column.fillBaseTerrain(seed, chunkX, chunkZ)
+	column.fillCaves(seed, chunkX, chunkZ)
+	column.fillLake(seed, chunkX, chunkZ)
+}
+
+func (column *Chunk) fillBaseTerrain(seed, chunkX, chunkZ int32) {
 	var base, temp, rain = terrainNoise(seed)
 	var baseX, baseZ = float64(chunkX) * 16, float64(chunkZ) * 16
 	var climate = [20][20]terrainBiome{}
@@ -173,7 +179,6 @@ func (column *Chunk) fillNormal(seed, chunkX, chunkZ int32) {
 			column.heightMap[row*16+col] = column.skyHeight(col, 128, row)
 		}
 	}
-	column.fillLake(seed, chunkX, chunkZ)
 }
 
 // 仅新建主世界时选点；先查配置坐标，再向四周寻找露天陆地。
