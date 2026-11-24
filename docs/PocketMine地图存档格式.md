@@ -39,3 +39,17 @@
 **最容易漏的差别：** 取 `(x,ly,z)=(2,5,3)`，标准 Anvil 的方块 ID 在节内偏移 **1330**，PMAnvil 在 **565**。前者相邻半字节对应相邻 x，后者对应相邻 ly。只重排 Blocks、不重排 Data，普通石头看不出问题，但有颜色或朝向的方块会读错。[ChunkUtils.php](../pocketmine服务器参考/src/pocketmine/level/format/io/ChunkUtils.php) 分别实现了字节与半字节的重排。
 
 各格式还在 `Level.Entities` 和 `Level.TileEntities` 两个列表保存普通实体与方块实体。仅读写方块 ID 和 meta 不足以还原世界：箱子的方块还在，并不代表箱子里的物品也在。
+
+## 导入到本服
+
+停服后在项目根目录运行以下命令。`-source` 指向含 `level.dat` 的目录，`-dest` 是**尚不存在**的新世界目录；示例假设 `data/worlds` 已在首次启动时创建：
+
+```powershell
+go run ./cmd/import-world -source "./pocketmine服务器参考/worlds/world" -dest "./data/worlds/Archive"
+```
+
+将 `Archive:normal` 加入现有 `extra-worlds` 后重启，即可用 `/world Archive` 进入。命令不会修改源图或覆盖旧目标。转换先写系统临时目录，再复制到目标；有大量区域文件时，请为临时目录和目标卷留足空间。最终复制阶段遇到磁盘错误会明确报告目标不完整。
+
+三个随附样本导入成功后会报告 **0 列**，因为样本只提供元数据。含 `region` 的世界则逐列导入已有方块、朝向或颜色 meta、群系（包括旧 BiomeColors）。本服重算高度和光照，未保存的地形按 Go 生成器继续生成，不保证新旧边界的地形相同。
+
+当前遇到非空实体、方块实体或待处理刻列表会报告文件与区块并停止，不会只导入箱子外壳。自定义生成器预设、超出 32 位范围的种子、超过 255 的方块 ID 和 LevelDB 也不支持。本工具只做 PocketMine → Go 的转换。

@@ -131,7 +131,8 @@
 - [ ] `/enchant`、附魔效果
 
 ### 15. 存档兼容
-- [ ] 读写 Anvil / McRegion（能导入参考端 `worlds/` 里现有地图）
+- [x] 离线导入参考端三个世界的 `level.dat`，以及 Anvil、McRegion、PMAnvil 的方块、meta 和群系到新 GMR 地图；[导入命令与适用范围](docs/PocketMine地图存档格式.md#导入到本服)。
+- [ ] 迁移区块里的实体、方块实体和待处理刻；将本服地图写回 Anvil / McRegion
 - [ ] LevelDB（与原版 BE 存档互通）
 - [x] 世界列表可配置：`level-name` 选主世界，`extra-worlds` 选择或创建额外世界；`/world` 列出实际加载的目录。停用后保留地图，玩家重登回主世界出生点。
 
