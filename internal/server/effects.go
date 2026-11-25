@@ -16,6 +16,7 @@ const (
 	effectHunger         = 17
 	effectPoison         = 19
 	effectWither         = 20
+	effectHealthBoost    = 21
 	effectAbsorption     = 22
 	effectSaturation     = 23
 )
@@ -65,6 +66,10 @@ func (player *Player) addEffect(effect storage.EffectData) bool {
 	if player.combat.Effects == nil {
 		player.combat.Effects = make(map[int32]storage.EffectData)
 	}
+	if effect.ID == effectHealthBoost {
+		// 参考端先按旧上限回血，再登记效果、扩大上限。
+		player.combat.Health = min(player.combat.healthLimit(), player.combat.Health+4*float32(effect.Amplifier+1))
+	}
 	player.combat.Effects[effect.ID] = effect
 	if effect.ID == effectAbsorption {
 		player.combat.Absorption = 4 * float32(effect.Amplifier+1)
@@ -105,6 +110,9 @@ func (admin serverAdmin) SetEffect(name string, id, ticks, amplifier int32, hidd
 		removed = map[int32]storage.EffectData{id: effect}
 	} else {
 		player.combat.Effects = nil
+	}
+	if removed[effectHealthBoost].Duration > 0 {
+		player.combat.Health = min(player.combat.Health, maxPlayerHealth)
 	}
 	var clearAbsorption = (id == 0 || id == effectAbsorption) && player.combat.Absorption != 0
 	if clearAbsorption {
@@ -156,6 +164,9 @@ func (srv *Server) tickEffects(player *Player) {
 		effect.Duration--
 		if effect.Duration == 0 {
 			delete(player.combat.Effects, id)
+			if id == effectHealthBoost {
+				player.combat.Health = min(player.combat.Health, maxPlayerHealth)
+			}
 			expired = append(expired, storage.EffectData{ID: id})
 			if id == effectAbsorption {
 				player.combat.Absorption = 0

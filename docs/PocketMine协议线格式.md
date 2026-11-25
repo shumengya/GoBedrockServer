@@ -104,9 +104,11 @@ RakNet 版本 **8** 与游戏协议号 **113** 位于不同层。离线握手依
 | 命令时长单位 | 可用名称（括号内是效果 ID） | 省略时长 |
 | --- | --- | --- |
 | 刻 | `healing`（6）、`harming`（7） | 1 刻，下一次效果更新结算 |
-| 秒 | `speed`（1）、`slowness`（2）、`strength`（5）、`jump_boost`（8）、`nausea`（9）、`regeneration`（10）、`resistance`（11）、`fire_resistance`（12）、`water_breathing`（13）、`invisibility`（14）、`blindness`（15）、`night_vision`（16）、`hunger`（17）、`weakness`（18）、`poison`（19）、`wither`（20）、`absorption`（22）、`saturation`（23） | 15 秒，即 300 刻 |
+| 秒 | `speed`（1）、`slowness`（2）、`strength`（5）、`jump_boost`（8）、`nausea`（9）、`regeneration`（10）、`resistance`（11）、`fire_resistance`（12）、`water_breathing`（13）、`invisibility`（14）、`blindness`（15）、`night_vision`（16）、`hunger`（17）、`weakness`（18）、`poison`（19）、`wither`（20）、`health_boost`（21）、`absorption`（22）、`saturation`（23） | 15 秒，即 300 刻 |
 
 例如，`/effect Alex healing 2` 连续两刻治疗，`/effect Alex jump 2` 则给予 40 刻跳跃提升。`jump`、`confusion` 和 `damage_resistance` 分别是 8、9、11 的别名。`/effect Alex 22 0` 只移除吸收，`/effect Alex clear` 清除全部。迅捷和迟缓另外更新当事人的移动属性；隐身通过实体元数据同步给观察者。凋零与中毒不同，能扣掉最后一点生命；饱食每次增加 1 点饥饿值，不增加饱和度。失明的画面由客户端根据 `MobEffect` 渲染。
+
+**生命提升（21）** 除了 `MobEffect`，还下发 `UpdateAttributes` 的 `minecraft:health`，其中 `Max` 为 20 + 4 × 等级，`Value` 为实际血量，默认值仍为 20。例如玩家原本 18/20，执行 `/effect Alex health_boost 30 1` 后，先按旧上限治疗，再扩大上限，得到 20/28；之后自然回血或治疗可以填满额外的心。失效、喝奶或用命令移除时，超出 20 的血量降到 20，低于 20 的血量保留。重登属性包使用存下来的实际血量及剩余效果计算的上限。
 
 ### 喝完一瓶药水
 

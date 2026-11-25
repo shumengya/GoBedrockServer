@@ -6,6 +6,84 @@ import "testing"
 import "go-mc-server/internal/command"
 import "go-mc-server/internal/protocol"
 import "go-mc-server/internal/protocol/packets"
+import "go-mc-server/internal/storage"
+
+// 生命提升先按旧上限治疗，再扩大心数；饱食回血可以越过 20，受伤后重登不能补回这部分血。
+func TestHealthBoostRecoveryAndSave(test *testing.T) {
+	var fixture = newAdminFixture(test)
+	var player = fixture.join("Alex", "127.0.0.1", "world")
+	var ctx = &command.Context{IsOp: true, Admin: fixture.admin(), Reply: func(string) {}}
+	var update []byte = nil
+	player.Session.SentHook = func(raw []byte) {
+		if raw[0] == protocol.IDUpdateAttributes {
+			update = bytes.Clone(raw)
+		}
+	}
+	player.combat.Health = 18
+	fixture.srv.cmds.Dispatch(ctx, "effect Alex health_boost 30 1")
+	var attr = packets.Attribute{Name: "minecraft:health", Max: 28, Value: 20, DefaultValue: 20}
+	var want, _ = packets.EncodePacket(&packets.UpdateAttributesPacket{EntityRuntimeID: player.EntityRuntimeID, Attributes: []packets.Attribute{attr}})
+	if player.Health() != 20 || !bytes.Equal(update, want) {
+		test.Fatalf("期望按原上限回到 20 并下发 20/28，实际 %v / %x", player.Health(), update)
+	}
+	player.food.Timer = foodTickPeriod - 1
+	fixture.srv.tickFood(player)
+	if player.Health() != 21 || !player.heal(100) || player.Health() != 28 {
+		test.Fatalf("期望自然回血至 21 且后续治疗封顶 28，实际 %v", player.Health())
+	}
+	fixture.srv.applyDamage(player, 2.5, DamageCauseMagic, nil, true)
+	var saved = player.Snapshot("world")
+	var err = storage.SavePlayer(fixture.srv.cfg.DataDir, saved)
+	if err != nil {
+		test.Fatalf("期望保存受伤玩家，实际 %v", err)
+	}
+	var loaded, found, loadErr = storage.LoadPlayer(fixture.srv.cfg.DataDir, saved.UUID)
+	if !found || loadErr != nil {
+		test.Fatalf("期望能读回玩家，实际 %t / %v", found, loadErr)
+	}
+	var restored = newTestPlayer(protocol.Air())
+	restored.ApplySave(loaded)
+	var health = packets.PlayerAttributes(restored.vitals())[4]
+	if health.Max != 28 || health.Value != 25.5 || restored.combat.Effects[21].Duration != 600 {
+		test.Fatalf("期望重登入场属性 25.5/28 且效果余 600 刻，实际 %+v / %+v", health, restored.combat.Effects)
+	}
+}
+
+// 自然过期、命令和牛奶都须收回额外心数，包括向客户端同步当前值和上限。
+func TestHealthBoostRemoval(test *testing.T) {
+	var paths = []string{"expire", "21 0", "clear", "milk"}
+	var index = 0
+	for index = 0; index < len(paths); index++ {
+		var fixture = newAdminFixture(test)
+		var player = fixture.join("Alex", "127.0.0.1", "world")
+		var ctx = &command.Context{IsOp: true, Admin: fixture.admin(), Reply: func(string) {}}
+		fixture.srv.cmds.Dispatch(ctx, "effect Alex 21 1")
+		player.heal(4)
+		var update []byte = nil
+		player.Session.SentHook = func(raw []byte) {
+			if raw[0] == protocol.IDUpdateAttributes {
+				update = bytes.Clone(raw)
+			}
+		}
+		switch paths[index] {
+		case "expire":
+			var tick = 0
+			for tick = 0; tick < 20; tick++ {
+				fixture.srv.tickEffects(player)
+			}
+		case "milk":
+			player.ApplyInventorySlot(0, protocol.Item{ID: 325, Meta: 1, Count: 1})
+			fixture.srv.drinkMilk(player)
+		default:
+			fixture.srv.cmds.Dispatch(ctx, "effect Alex "+paths[index])
+		}
+		var attr = packets.Attribute{Name: "minecraft:health", Max: 20, Value: 20, DefaultValue: 20}
+		var want, _ = packets.EncodePacket(&packets.UpdateAttributesPacket{EntityRuntimeID: player.EntityRuntimeID, Attributes: []packets.Attribute{attr}})
+		if len(player.combat.Effects) != 0 || player.Health() != 20 || !bytes.Equal(update, want) {
+			test.Fatalf("期望 %s 恢复 20/20 并移除效果，实际 %+v / %x", paths[index], player.combat, update)
+		}
+	}
+}
 
 // 凋零 II 每 25 刻伤害一次且可致死；饱食 II 每 10 刻只补饥饿，满值后不重复发包。
 func TestEffectCommandWitherAndSaturation(test *testing.T) {

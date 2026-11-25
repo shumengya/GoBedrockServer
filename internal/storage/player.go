@@ -17,6 +17,7 @@ type SlotData struct {
 type PlayerData struct {
 	Effects    map[int32]EffectData `json:"effects,omitempty"`
 	Absorption float32              `json:"absorption,omitempty"`
+	Health     float32              `json:"health,omitempty"`
 
 	UUID      string     `json:"uuid"`
 	Name      string     `json:"name"`

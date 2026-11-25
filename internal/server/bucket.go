@@ -121,6 +121,7 @@ func (srv *Server) drinkMilk(player *Player) {
 	var removed = player.combat.Effects
 	var hadAbsorption = player.combat.Absorption > 0
 	player.combat.Effects, player.combat.Absorption = nil, 0
+	player.combat.Health = min(player.combat.Health, maxPlayerHealth)
 	player.mu.Unlock()
 	srv.sendRemovedEffects(player, removed, hadAbsorption)
 	srv.broadcastInWorld(srv.playerWorldName(player), &packets.EntityEventPacket{EntityRuntimeID: player.EntityRuntimeID, Event: packets.EntityEventUseItem}, "")

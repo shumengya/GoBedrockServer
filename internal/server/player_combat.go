@@ -66,6 +66,15 @@ type miningState struct {
 	Ticks   int32
 }
 
+// 生命上限由当前效果决定，不另存一份，避免清除效果或读档时留下旧上限。
+func (state *combatState) healthLimit() float32 {
+	var boost = state.Effects[effectHealthBoost]
+	if boost.Duration > 0 {
+		return maxPlayerHealth + 4*float32(boost.Amplifier+1)
+	}
+	return maxPlayerHealth
+}
+
 func (player *Player) Health() float32 {
 	player.mu.RLock()
 	defer player.mu.RUnlock()
@@ -121,10 +130,11 @@ func (player *Player) takeDamage(amount float32, cause DamageCause, now time.Tim
 func (player *Player) heal(amount float32) bool {
 	player.mu.Lock()
 	defer player.mu.Unlock()
-	if player.combat.Dead || amount <= 0 || player.combat.Health >= maxPlayerHealth {
+	var limit = player.combat.healthLimit()
+	if player.combat.Dead || amount <= 0 || player.combat.Health >= limit {
 		return false
 	}
-	player.combat.Health = min(maxPlayerHealth, player.combat.Health+amount)
+	player.combat.Health = min(limit, player.combat.Health+amount)
 	return true
 }
 

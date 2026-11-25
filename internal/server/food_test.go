@@ -24,7 +24,7 @@ func runFoodTicks(state *foodState, ticks int, health float32, difficulty int32)
 	var totals tickTotals = tickTotals{}
 	var index int = 0
 	for index = 0; index < ticks; index++ {
-		var effect foodTickEffect = state.tick(health, difficulty)
+		var effect foodTickEffect = state.tick(health, maxPlayerHealth, difficulty)
 		totals.Heal += effect.Heal
 		if effect.Starve {
 			totals.Starved++

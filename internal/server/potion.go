@@ -58,6 +58,11 @@ func (player *Player) potionSpeed() float32 {
 
 func (srv *Server) syncPotionChange(player *Player, id int32) {
 	switch id {
+	case effectHealthBoost:
+		if player.Session != nil {
+			var vitals = player.vitals()
+			player.Session.SendPacket(&packets.UpdateAttributesPacket{EntityRuntimeID: player.EntityRuntimeID, Attributes: []packets.Attribute{packets.HealthAttribute(vitals)}})
+		}
 	case effectSpeed, effectSlowness:
 		if player.Session != nil {
 			player.Session.SendPacket(&packets.UpdateAttributesPacket{EntityRuntimeID: player.EntityRuntimeID, Attributes: []packets.Attribute{packets.MovementAttribute(player.potionSpeed())}})

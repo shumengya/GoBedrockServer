@@ -57,6 +57,7 @@ func DefaultAttributes() []Attribute {
 type PlayerVitals struct {
 	Absorption float32
 	Health     float32
+	MaxHealth  float32
 	Hunger     float32
 	Saturation float32
 	Exhaustion float32
@@ -65,7 +66,7 @@ type PlayerVitals struct {
 // DefaultVitals 是满血满饱食的初始状态。
 // 饱和度取参考端的 20，而不是原版的 5；它不显示在 HUD 上，只影响饥饿下降的快慢。
 func DefaultVitals() PlayerVitals {
-	return PlayerVitals{Health: 20, Hunger: 20, Saturation: 20, Exhaustion: 0}
+	return PlayerVitals{Health: 20, MaxHealth: 20, Hunger: 20, Saturation: 20, Exhaustion: 0}
 }
 
 // HungerAttributes 只含饥饿相关的三项（饱和度、疲劳度、饥饿值），增量同步用。
@@ -91,6 +92,10 @@ func MovementAttribute(value float32) Attribute {
 	return Attribute{Min: 0, Max: math.MaxFloat32, Value: value, DefaultValue: 0.1, Name: "minecraft:movement"}
 }
 
+func HealthAttribute(vitals PlayerVitals) Attribute {
+	return Attribute{Min: 0, Max: vitals.MaxHealth, Value: vitals.Health, DefaultValue: 20, Name: "minecraft:health"}
+}
+
 // PlayerAttributes 按 1.1 的属性顺序组装整包，顺序不能动：客户端可能按下标匹配。
 func PlayerAttributes(vitals PlayerVitals) []Attribute {
 	var fltMax float32 = math.MaxFloat32
@@ -99,7 +104,7 @@ func PlayerAttributes(vitals PlayerVitals) []Attribute {
 		{Min: 0, Max: 20, Value: vitals.Saturation, DefaultValue: 20, Name: "minecraft:player.saturation"},
 		{Min: 0, Max: 5, Value: vitals.Exhaustion, DefaultValue: 0, Name: "minecraft:player.exhaustion"},
 		{Min: 0, Max: 1, Value: 0, DefaultValue: 0, Name: "minecraft:knockback_resistance"},
-		{Min: 0, Max: 20, Value: vitals.Health, DefaultValue: 20, Name: "minecraft:health"},
+		HealthAttribute(vitals),
 		MovementAttribute(0.1),
 		{Min: 0, Max: 2048, Value: 16, DefaultValue: 16, Name: "minecraft:follow_range"},
 		{Min: 0, Max: 20, Value: vitals.Hunger, DefaultValue: 20, Name: "minecraft:player.hunger"},

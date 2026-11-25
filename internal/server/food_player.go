@@ -12,6 +12,7 @@ func (player *Player) vitals() packets.PlayerVitals {
 	return packets.PlayerVitals{
 		Absorption: player.combat.Absorption,
 		Health:     player.combat.Health,
+		MaxHealth:  player.combat.healthLimit(),
 		Hunger:     player.food.Food,
 		Saturation: player.food.Saturation,
 		Exhaustion: player.food.Exhaustion,
@@ -41,7 +42,7 @@ func (player *Player) advanceFood(difficulty int32) foodTickEffect {
 	if !player.survivalOnly() {
 		return foodTickEffect{}
 	}
-	return player.food.tick(player.combat.Health, difficulty)
+	return player.food.tick(player.combat.Health, player.combat.healthLimit(), difficulty)
 }
 
 // setSprinting 记录疾跑状态，只用来决定走路疲劳按哪个速率算。

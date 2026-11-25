@@ -116,7 +116,7 @@ func starvationApplies(health float32, difficulty int32) bool {
 }
 
 // tick 推进一个 tick。逻辑逐行对应参考端 Human::doFoodTick。
-func (state *foodState) tick(health float32, difficulty int32) foodTickEffect {
+func (state *foodState) tick(health, healthLimit float32, difficulty int32) foodTickEffect {
 	var effect foodTickEffect = foodTickEffect{}
 	state.Timer++
 	if state.Timer >= foodTickPeriod {
@@ -130,7 +130,7 @@ func (state *foodState) tick(health float32, difficulty int32) foodTickEffect {
 			state.setFood(state.Food + 1)
 			effect.Changed = true
 		}
-		if state.Timer%peacefulHealTick == 0 && health < maxPlayerHealth {
+		if state.Timer%peacefulHealTick == 0 && health < healthLimit {
 			effect.Heal = 1
 		}
 	}
@@ -138,7 +138,7 @@ func (state *foodState) tick(health float32, difficulty int32) foodTickEffect {
 		return effect
 	}
 	if state.Food >= regenFoodLevel {
-		if health < maxPlayerHealth && effect.Heal == 0 {
+		if health < healthLimit && effect.Heal == 0 {
 			effect.Heal = 1
 			effect.Changed = state.exhaust(exhaustRegen) || effect.Changed
 		}

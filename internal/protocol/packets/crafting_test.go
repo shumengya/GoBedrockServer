@@ -211,7 +211,7 @@ func TestCraftingEventRejectsHugeCount(test *testing.T) {
 
 // 属性包要带上真实血量和饥饿值，同步饥饿时不能把血量顶回满。
 func TestPlayerAttributesCarryVitals(test *testing.T) {
-	var attrs []Attribute = PlayerAttributes(PlayerVitals{Health: 7, Hunger: 13, Saturation: 2.5, Exhaustion: 1.25})
+	var attrs []Attribute = PlayerAttributes(PlayerVitals{Health: 7, MaxHealth: 20, Hunger: 13, Saturation: 2.5, Exhaustion: 1.25})
 	if len(attrs) != 11 {
 		test.Fatalf("属性数应为 11，实际 %d", len(attrs))
 	}

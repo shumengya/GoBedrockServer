@@ -171,6 +171,7 @@ func (p *Player) Snapshot(worldName string) storage.PlayerData {
 	}
 	return storage.PlayerData{
 		Effects: maps.Clone(p.combat.Effects), Absorption: p.combat.Absorption,
+		Health:     p.combat.Health,
 		UUID:       p.UUID,
 		Name:       p.Username,
 		XUID:       p.XUID,
@@ -237,6 +238,10 @@ func (p *Player) ApplySave(d storage.PlayerData) {
 	p.food.restore(d.Food)
 	p.floating = storage.ItemsFromSlots(d.Floating, min(len(d.Floating), protocol.PlayerInventorySize))
 	p.combat.Effects = maps.Clone(d.Effects)
+	// 老存档没有血量，死亡后退出也沿用原有的重新进服满血行为。
+	if d.Health > 0 {
+		p.combat.Health = min(d.Health, p.combat.healthLimit())
+	}
 	p.combat.Absorption = d.Absorption
 }
 
