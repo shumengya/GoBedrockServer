@@ -14,8 +14,8 @@ var effectNames = [...]struct {
 }{
 	{1, "speed", ""}, {2, "slowness", ""}, {5, "strength", ""}, {6, "healing", ""}, {7, "harming", ""},
 	{8, "jump_boost", "jump"}, {9, "nausea", "confusion"}, {10, "regeneration", ""}, {11, "resistance", "damage_resistance"},
-	{12, "fire_resistance", ""}, {13, "water_breathing", ""}, {14, "invisibility", ""}, {16, "night_vision", ""},
-	{17, "hunger", ""}, {18, "weakness", ""}, {19, "poison", ""}, {22, "absorption", ""},
+	{12, "fire_resistance", ""}, {13, "water_breathing", ""}, {14, "invisibility", ""}, {15, "blindness", ""}, {16, "night_vision", ""},
+	{17, "hunger", ""}, {18, "weakness", ""}, {19, "poison", ""}, {20, "wither", ""}, {22, "absorption", ""}, {23, "saturation", ""},
 }
 
 func runEffect(ctx *Context, args []string) error {

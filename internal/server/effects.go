@@ -15,7 +15,9 @@ const (
 	effectFireResistance = 12
 	effectHunger         = 17
 	effectPoison         = 19
+	effectWither         = 20
 	effectAbsorption     = 22
+	effectSaturation     = 23
 )
 
 func foodEffects(item protocol.Item, random dropRandom) []storage.EffectData {
@@ -126,6 +128,7 @@ func (srv *Server) tickEffects(player *Player) {
 		return
 	}
 	var poison, regen bool = false, false
+	var wither, foodChanged bool = false, false
 	var instantHeal, instantHarm float32 = 0, 0
 	var exhaust float32 = 0
 	var expired []storage.EffectData = nil
@@ -138,6 +141,13 @@ func (srv *Server) tickEffects(player *Player) {
 			instantHarm = 6 * float32(effect.Amplifier+1)
 		case effectPoison:
 			poison = effect.Duration%max(int32(1), 25>>uint(effect.Amplifier)) == 0
+		case effectWither:
+			wither = effect.Duration%max(int32(1), 50>>uint(effect.Amplifier)) == 0
+		case effectSaturation:
+			if effect.Duration%max(int32(1), 20>>uint(effect.Amplifier)) == 0 && player.food.Food < maxFoodLevel {
+				player.food.setFood(player.food.Food + 1)
+				foodChanged = true
+			}
 		case effectRegen:
 			regen = effect.Duration%max(int32(1), 40>>uint(effect.Amplifier)) == 0
 		case effectHunger:
@@ -155,6 +165,9 @@ func (srv *Server) tickEffects(player *Player) {
 		}
 	}
 	player.mu.Unlock()
+	if foodChanged {
+		srv.sendHunger(player)
+	}
 	if instantHeal > 0 && player.heal(instantHeal) {
 		srv.sendHealth(player, player.Health())
 	}
@@ -166,6 +179,9 @@ func (srv *Server) tickEffects(player *Player) {
 	}
 	if poison {
 		srv.applyDamage(player, 1, DamageCausePoison, nil, true)
+	}
+	if wither {
+		srv.applyDamage(player, 1, DamageCauseMagic, nil, true)
 	}
 	if exhaust > 0 {
 		srv.exhaustPlayer(player, exhaust)

@@ -7,6 +7,51 @@ import "go-mc-server/internal/command"
 import "go-mc-server/internal/protocol"
 import "go-mc-server/internal/protocol/packets"
 
+// 凋零 II 每 25 刻伤害一次且可致死；饱食 II 每 10 刻只补饥饿，满值后不重复发包。
+func TestEffectCommandWitherAndSaturation(test *testing.T) {
+	var fixture = newAdminFixture(test)
+	var player = fixture.join("Alex", "127.0.0.1", "world")
+	var ctx = &command.Context{IsOp: true, Admin: fixture.admin(), Reply: func(string) {}}
+	var updates = 0
+	player.Session.SentHook = func(raw []byte) {
+		if raw[0] == protocol.IDUpdateAttributes {
+			updates++
+		}
+	}
+	player.food.Food, player.food.Saturation = 18, 2
+	fixture.srv.cmds.Dispatch(ctx, "effect Alex saturation 2 1")
+	var tick = 0
+	for tick = 0; tick < 40; tick++ {
+		fixture.srv.tickEffects(player)
+		var expected float32 = 19
+		if tick >= 10 {
+			expected = 20
+		}
+		if player.food.Food != expected || player.food.Saturation != 2 {
+			test.Fatalf("期望第 %d 刻饥饿 %v、饱和度 2，实际 %+v", tick+1, expected, player.food)
+		}
+	}
+	if updates != 2 {
+		test.Fatalf("期望两次补饥饿属性通知，实际 %d", updates)
+	}
+	player.combat.Health = 2
+	fixture.srv.cmds.Dispatch(ctx, "effect Alex wither 3 1")
+	for tick = 0; tick < 35; tick++ {
+		fixture.srv.tickEffects(player)
+		var expected float32 = 2
+		if tick >= 10 {
+			expected = 1
+		}
+		if player.Health() != expected {
+			test.Fatalf("期望第 %d 刻血量 %v，实际 %v", tick+1, expected, player.Health())
+		}
+	}
+	fixture.srv.tickEffects(player)
+	if !player.IsDead() || player.combat.LastCause != DamageCauseMagic {
+		test.Fatalf("期望第二次凋零造成魔法死亡，实际 %+v", player.combat)
+	}
+}
+
 // 用命令触发真实结算：瞬时药默认一刻，显式时长逐刻生效，普通药仍按秒换算。
 func TestEffectCommandPotionDuration(test *testing.T) {
 	var fixture = newAdminFixture(test)
