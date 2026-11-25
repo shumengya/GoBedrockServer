@@ -33,6 +33,13 @@ func DefaultPlayerFlags() uint64 {
 		EntityFlagCanClimb | EntityFlagBreathing
 }
 
+func PlayerFlags(invisible bool) uint64 {
+	if invisible {
+		return DefaultPlayerFlags()&^(EntityFlagCanShowName|EntityFlagAlwaysShowName) | (1 << 5)
+	}
+	return DefaultPlayerFlags()
+}
+
 func (p *SetEntityDataPacket) ID() byte { return protocol.IDSetEntityData }
 
 func (p *SetEntityDataPacket) Encode(s *protocol.BinaryStream) error {

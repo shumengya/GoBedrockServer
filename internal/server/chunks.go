@@ -118,7 +118,7 @@ func (srv *Server) setPlayerImmobile(p *Player, frozen bool) {
 	if p == nil || p.Session == nil {
 		return
 	}
-	flags := packets.DefaultPlayerFlags()
+	flags := packets.PlayerFlags(p.effectLevel(effectInvisible) > 0)
 	if frozen {
 		flags |= packets.EntityFlagImmobile
 	}

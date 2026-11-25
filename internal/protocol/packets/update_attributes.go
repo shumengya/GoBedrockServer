@@ -87,6 +87,10 @@ func AbsorptionAttribute(value float32) Attribute {
 	return Attribute{Min: 0, Max: math.MaxFloat32, Value: value, DefaultValue: 0, Name: "minecraft:absorption"}
 }
 
+func MovementAttribute(value float32) Attribute {
+	return Attribute{Min: 0, Max: math.MaxFloat32, Value: value, DefaultValue: 0.1, Name: "minecraft:movement"}
+}
+
 // PlayerAttributes 按 1.1 的属性顺序组装整包，顺序不能动：客户端可能按下标匹配。
 func PlayerAttributes(vitals PlayerVitals) []Attribute {
 	var fltMax float32 = math.MaxFloat32
@@ -96,7 +100,7 @@ func PlayerAttributes(vitals PlayerVitals) []Attribute {
 		{Min: 0, Max: 5, Value: vitals.Exhaustion, DefaultValue: 0, Name: "minecraft:player.exhaustion"},
 		{Min: 0, Max: 1, Value: 0, DefaultValue: 0, Name: "minecraft:knockback_resistance"},
 		{Min: 0, Max: 20, Value: vitals.Health, DefaultValue: 20, Name: "minecraft:health"},
-		{Min: 0, Max: fltMax, Value: 0.10, DefaultValue: 0.10, Name: "minecraft:movement"},
+		MovementAttribute(0.1),
 		{Min: 0, Max: 2048, Value: 16, DefaultValue: 16, Name: "minecraft:follow_range"},
 		{Min: 0, Max: 20, Value: vitals.Hunger, DefaultValue: 20, Name: "minecraft:player.hunger"},
 		{Min: 0, Max: fltMax, Value: 1, DefaultValue: 1, Name: "minecraft:attack_damage"},

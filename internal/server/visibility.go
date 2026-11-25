@@ -106,7 +106,7 @@ func addPlayerPacket(player *Player) *packets.AddPlayerPacket {
 		HeadYaw:         player.Yaw,
 		Yaw:             player.Yaw,
 		Item:            player.HeldItem,
-		Metadata:        packets.PlayerMetadata(player.Username),
+		Metadata:        packets.PlayerMetadata(player.Username, packets.PlayerFlags(player.combat.Effects[effectInvisible].Duration > 0)),
 	}
 }
 

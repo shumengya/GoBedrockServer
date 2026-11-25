@@ -22,6 +22,7 @@ const DamageCauseCactus DamageCause = 7
 const DamageCausePlayer DamageCause = 8
 const DamageCauseStarvation DamageCause = 9
 const DamageCausePoison DamageCause = 10
+const DamageCauseMagic DamageCause = 11
 
 // lifeTick 区分每种环境伤害各自的节拍器，互不干扰。
 type lifeTick int
@@ -58,6 +59,8 @@ const suffocationTick int32 = 10
 
 func damageLabel(cause DamageCause) string {
 	switch cause {
+	case DamageCauseMagic:
+		return "魔法"
 	case DamageCauseFall:
 		return "摔落"
 	case DamageCauseVoid:
@@ -84,6 +87,8 @@ func damageLabel(cause DamageCause) string {
 // deathTranslationKey 返回 1.1 客户端内置的死亡翻译键，键名取自参考端 eng.ini。
 func deathTranslationKey(cause DamageCause) string {
 	switch cause {
+	case DamageCauseMagic:
+		return "death.attack.magic"
 	case DamageCauseFall:
 		return "death.attack.fall"
 	case DamageCauseVoid:
@@ -231,7 +236,7 @@ func (srv *Server) tickDrowning(player *Player) {
 	var headY int32 = int32(math.Floor(float64(posY)))
 	var headZ int32 = int32(math.Floor(float64(posZ)))
 	var headID byte = blockIDAt(blockWorld, headX, headY, headZ)
-	if !isWaterBlock(headID) {
+	if !isWaterBlock(headID) || player.effectLevel(effectWaterBreathing) > 0 {
 		player.refillAir()
 		return
 	}

@@ -97,9 +97,9 @@ func (packet *AddPlayerPacket) Decode(stream *protocol.BinaryStream) error {
 
 // PlayerMetadata is Human::$dataProperties as sent in AddPlayer:
 // 名字常显、可攀爬、在呼吸（否则别人头上会冒气泡）。
-func PlayerMetadata(name string) []MetadataEntry {
+func PlayerMetadata(name string, flags uint64) []MetadataEntry {
 	return []MetadataEntry{
-		{Key: EntityDataFlags, Type: EntityDataTypeLong, Long: int64(DefaultPlayerFlags())},
+		{Key: EntityDataFlags, Type: EntityDataTypeLong, Long: int64(flags)},
 		{Key: EntityDataAir, Type: EntityDataTypeShort, Short: DefaultAirTicks},
 		{Key: EntityDataMaxAir, Type: EntityDataTypeShort, Short: DefaultAirTicks},
 		{Key: EntityDataNametag, Type: EntityDataTypeString, String: name},

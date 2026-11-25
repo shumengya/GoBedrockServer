@@ -581,6 +581,9 @@ func (srv *Server) spawnPlayer(sess *network.Session) {
 	srv.sendWorldTimeTo(sess, w)
 	srv.sendVitals(p)
 	p.syncEffects(packets.MobEffectAdd)
+	if p.effectLevel(effectSpeed) > 0 || p.effectLevel(effectSlowness) > 0 {
+		srv.syncPotionChange(p, effectSpeed)
+	}
 	srv.sendGameModeState(p)
 	srv.sendPlayerListOnJoin(p)
 	srv.sendCraftingData(sess)

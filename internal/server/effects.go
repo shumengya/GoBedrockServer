@@ -108,7 +108,7 @@ func (admin serverAdmin) SetEffect(name string, id, ticks, amplifier int32, hidd
 		player.combat.Absorption = 0
 	}
 	player.mu.Unlock()
-	player.sendRemovedEffects(removed, clearAbsorption)
+	admin.srv.sendRemovedEffects(player, removed, clearAbsorption)
 	return player.Username, nil
 }
 
@@ -125,11 +125,16 @@ func (srv *Server) tickEffects(player *Player) {
 		return
 	}
 	var poison, regen bool = false, false
+	var instantHeal, instantHarm float32 = 0, 0
 	var exhaust float32 = 0
 	var expired []storage.EffectData = nil
 	for _, id := range slices.Sorted(maps.Keys(player.combat.Effects)) {
 		var effect storage.EffectData = player.combat.Effects[id]
 		switch id {
+		case effectHealing:
+			instantHeal = 4 * float32(effect.Amplifier+1)
+		case effectHarming:
+			instantHarm = 6 * float32(effect.Amplifier+1)
 		case effectPoison:
 			poison = effect.Duration%max(int32(1), 25>>uint(effect.Amplifier)) == 0
 		case effectRegen:
@@ -149,6 +154,12 @@ func (srv *Server) tickEffects(player *Player) {
 		}
 	}
 	player.mu.Unlock()
+	if instantHeal > 0 && player.heal(instantHeal) {
+		srv.sendHealth(player, player.Health())
+	}
+	if instantHarm > 0 {
+		srv.applyDamage(player, instantHarm, DamageCauseMagic, nil, true)
+	}
 	if regen && player.heal(1) {
 		srv.sendHealth(player, player.Health())
 	}
@@ -160,6 +171,7 @@ func (srv *Server) tickEffects(player *Player) {
 	}
 	for _, effect := range expired {
 		player.sendEffect(packets.MobEffectRemove, effect)
+		srv.syncPotionChange(player, effect.ID)
 		if effect.ID == effectAbsorption {
 			player.sendAbsorption()
 		}
@@ -179,11 +191,12 @@ func (player *Player) syncEffects(event byte) {
 	}
 }
 
-func (player *Player) sendRemovedEffects(removed map[int32]storage.EffectData, hadAbsorption bool) {
+func (srv *Server) sendRemovedEffects(player *Player, removed map[int32]storage.EffectData, hadAbsorption bool) {
 	var ids = slices.Sorted(maps.Keys(removed))
 	var index = 0
 	for index = 0; index < len(ids); index++ {
 		player.sendEffect(packets.MobEffectRemove, removed[ids[index]])
+		srv.syncPotionChange(player, ids[index])
 	}
 	if hadAbsorption {
 		player.sendAbsorption()

@@ -127,7 +127,7 @@ func (srv *Server) handleEntityFall(sess *network.Session, pkt *packets.EntityFa
 	if player.gameMode() != int32(protocol.GameModeSurvival) {
 		return
 	}
-	var damage float32 = fallDamageFor(pkt.FallDistance)
+	var damage float32 = fallDamageFor(pkt.FallDistance - float32(player.effectLevel(effectJump)))
 	if damage <= 0 {
 		return
 	}

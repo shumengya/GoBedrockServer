@@ -50,6 +50,7 @@ func (srv *Server) handleInteract(sess *network.Session, pkt *packets.InteractPa
 	}
 	var held protocol.Item = attacker.heldSnapshot()
 	var damage float32 = toolInfoFor(held).AttackDamage
+	damage *= (1 + 0.3*float32(attacker.effectLevel(effectStrength))) * max(0, 1-0.2*float32(attacker.effectLevel(effectWeakness)))
 	var applied bool = srv.applyDamage(target, damage, DamageCausePlayer, attacker, false)
 	if !applied {
 		return
@@ -141,9 +142,13 @@ func (srv *Server) sendHealth(player *Player, health float32) {
 func (srv *Server) killPlayer(victim *Player, killer *Player, cause DamageCause) {
 	victim.syncEffects(packets.MobEffectRemove)
 	victim.mu.Lock()
+	var wasInvisible = victim.combat.Effects[effectInvisible].Duration > 0
 	victim.combat.Effects = nil
 	victim.combat.Absorption = 0
 	victim.mu.Unlock()
+	if wasInvisible {
+		srv.syncPotionChange(victim, effectInvisible)
+	}
 	var worldName string = srv.playerWorldName(victim)
 	srv.broadcastInWorld(
 		worldName,

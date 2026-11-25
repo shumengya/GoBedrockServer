@@ -17,7 +17,7 @@ func TestAddPlayerRoundTrip(test *testing.T) {
 		HeadYaw:         90,
 		Yaw:             90,
 		Item:            protocol.Item{ID: 1, Count: 64},
-		Metadata:        PlayerMetadata("Steve"),
+		Metadata:        PlayerMetadata("Steve", DefaultPlayerFlags()),
 	}
 	var raw, err = EncodePacket(original)
 	if err != nil {

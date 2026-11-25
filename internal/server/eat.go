@@ -58,6 +58,9 @@ func (player *Player) eatHeld(now time.Time) (eatOutcome, string) {
 	}
 	var held protocol.Item = player.Inventory[slot]
 	var info, isFood = foodFor(held)
+	if held.ID == itemPotion && held.Count > 0 && held.Meta > 0 && held.Meta < int32(len(potionKinds)) {
+		info, isFood = foodInfo{AlwaysEdible: true, Residue: protocol.Item{ID: itemGlassBottle, Count: 1}}, true
+	}
 	if !isFood {
 		return eatOutcome{}, "手里不是食物"
 	}
@@ -66,7 +69,9 @@ func (player *Player) eatHeld(now time.Time) (eatOutcome, string) {
 		return eatOutcome{}, reason
 	}
 	player.food.LastEat = now
-	player.food.eat(info.Restore, info.Saturation)
+	if held.ID != itemPotion {
+		player.food.eat(info.Restore, info.Saturation)
+	}
 	var outcome eatOutcome = eatOutcome{Accepted: true, Slot: slot, Held: held, Consumed: held}
 	if player.GameMode == int32(protocol.GameModeCreative) {
 		return outcome, ""
@@ -115,7 +120,9 @@ func (srv *Server) finishEating(player *Player) {
 		return
 	}
 	srv.sendPlayerInventory(player)
-	srv.sendHunger(player)
+	if outcome.Consumed.ID != itemPotion {
+		srv.sendHunger(player)
+	}
 	srv.broadcastInWorld(
 		srv.playerWorldName(player),
 		&packets.EntityEventPacket{
@@ -125,6 +132,9 @@ func (srv *Server) finishEating(player *Player) {
 		"",
 	)
 	srv.broadcastHeldItem(player)
+	if outcome.Consumed.ID == itemPotion {
+		srv.applyPotion(player, outcome.Consumed.Meta)
+	}
 	for _, effect := range foodEffects(outcome.Consumed, defaultDropRandom{}) {
 		player.addEffect(effect)
 	}

@@ -122,7 +122,7 @@ func (srv *Server) drinkMilk(player *Player) {
 	var hadAbsorption = player.combat.Absorption > 0
 	player.combat.Effects, player.combat.Absorption = nil, 0
 	player.mu.Unlock()
-	player.sendRemovedEffects(removed, hadAbsorption)
+	srv.sendRemovedEffects(player, removed, hadAbsorption)
 	srv.broadcastInWorld(srv.playerWorldName(player), &packets.EntityEventPacket{EntityRuntimeID: player.EntityRuntimeID, Event: packets.EntityEventUseItem}, "")
 	srv.syncBucket(player, overflow)
 }
