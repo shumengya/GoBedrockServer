@@ -372,6 +372,7 @@ func (srv *Server) entitySnapshot(worldName string) []storage.EntityData {
 			SpeedZ:      e.SpeedZ,
 			PickupDelay: e.PickupDelay,
 			Age:         e.Age,
+			OnGround:    e.OnGround,
 		})
 	}
 	return out
@@ -416,6 +417,7 @@ func (srv *Server) restoreEntities(worldName string, list []storage.EntityData) 
 			Item:        stack,
 			PickupDelay: d.PickupDelay,
 			Age:         d.Age,
+			OnGround:    d.OnGround,
 			WorldName:   worldName,
 		}
 	}

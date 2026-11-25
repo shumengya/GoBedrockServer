@@ -111,6 +111,7 @@ func ImportPMWorld(source, dest string) (int, error) {
 	}
 	defer os.RemoveAll(stage)
 	var tiles []TileRecord = nil
+	var entities []EntityData = nil
 	var columns, index = 0, 0
 	for index = 0; index < len(entries); index++ {
 		var filename = entries[index].Name()
@@ -127,7 +128,7 @@ func ImportPMWorld(source, dest string) (int, error) {
 		if _, err = os.Stat(output); err == nil {
 			return 0, fmt.Errorf("重复区域: %s", filename)
 		}
-		var count, regionErr = importPMRegion(filepath.Join(dir, "region", filename), output, match[3], int32(regionX), int32(regionZ), &tiles)
+		var count, regionErr = importPMRegion(filepath.Join(dir, "region", filename), output, match[3], int32(regionX), int32(regionZ), &tiles, &entities)
 		if regionErr != nil {
 			return 0, fmt.Errorf("%s: %w", filename, regionErr)
 		}
@@ -135,6 +136,11 @@ func ImportPMWorld(source, dest string) (int, error) {
 	}
 	if len(tiles) > 0 {
 		if err = saveTileRecords(filepath.Join(stage, TilesFile), tiles); err != nil {
+			return 0, err
+		}
+	}
+	if len(entities) > 0 {
+		if err = saveEntityRecords(filepath.Join(stage, EntitiesFile), entities); err != nil {
 			return 0, err
 		}
 	}
@@ -150,7 +156,7 @@ func ImportPMWorld(source, dest string) (int, error) {
 	return columns, nil
 }
 
-func importPMRegion(input, output, format string, regionX, regionZ int32, tiles *[]TileRecord) (int, error) {
+func importPMRegion(input, output, format string, regionX, regionZ int32, tiles *[]TileRecord, entities *[]EntityData) (int, error) {
 	var file, err = os.Open(input)
 	if err != nil {
 		return 0, err
@@ -203,6 +209,18 @@ func importPMRegion(input, output, format string, regionX, regionZ int32, tiles 
 			return 0, fmt.Errorf("区块 (%d,%d) TileEntities: %w", chunkX, chunkZ, tileErr)
 		}
 		*tiles = append(*tiles, added...)
+		var group = level.fields["Entities"]
+		if group.kind != 0 && group.kind != 9 {
+			return 0, fmt.Errorf("区块 (%d,%d) Entities 需要列表", chunkX, chunkZ)
+		}
+		var index = 0
+		for index = 0; index < len(group.list); index++ {
+			var record, entityErr = pmDrop(group.list[index], chunkX, chunkZ)
+			if entityErr != nil {
+				return 0, fmt.Errorf("区块 (%d,%d) Entities[%d]: %w", chunkX, chunkZ, index, entityErr)
+			}
+			*entities = append(*entities, record)
+		}
 		region.slots[slot], err = deflate(column.EncodeDisk())
 		if err != nil {
 			return 0, err
@@ -213,13 +231,10 @@ func importPMRegion(input, output, format string, regionX, regionZ int32, tiles 
 }
 
 func pmColumn(level pmTag, format string) (*world.Chunk, error) {
-	var lists = [...]string{"Entities", "TileTicks"}
 	var index = 0
-	for index = 0; index < len(lists); index++ {
-		var tag = level.fields[lists[index]]
-		if tag.kind != 0 && (tag.kind != 9 || len(tag.list) > 0) {
-			return nil, fmt.Errorf("尚不能转换 %s，已停止导入", lists[index])
-		}
+	var ticks = level.fields["TileTicks"]
+	if ticks.kind != 0 && (ticks.kind != 9 || len(ticks.list) > 0) {
+		return nil, fmt.Errorf("尚不能转换 TileTicks，已停止导入")
 	}
 	var sections [16][]byte
 	if format == "mcr" {

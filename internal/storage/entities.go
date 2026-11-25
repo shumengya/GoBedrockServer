@@ -28,6 +28,7 @@ type EntityData struct {
 	SpeedZ      float32 `json:"speedZ"`
 	PickupDelay int     `json:"pickupDelay"`
 	Age         int     `json:"age"`
+	OnGround    bool    `json:"onGround,omitempty"`
 }
 
 func EntitiesPath(dataDir, worldName string) string {
@@ -53,6 +54,10 @@ func SaveEntities(dataDir, worldName string, list []EntityData) error {
 	if err := os.MkdirAll(WorldDir(dataDir, worldName), 0o755); err != nil {
 		return err
 	}
+	return saveEntityRecords(EntitiesPath(dataDir, worldName), list)
+}
+
+func saveEntityRecords(path string, list []EntityData) error {
 	if list == nil {
 		list = []EntityData{}
 	}
@@ -61,7 +66,6 @@ func SaveEntities(dataDir, worldName string, list []EntityData) error {
 		return err
 	}
 	raw = append(raw, '\n')
-	path := EntitiesPath(dataDir, worldName)
 	tmp := path + ".tmp"
 	if err := os.WriteFile(tmp, raw, 0o644); err != nil {
 		return err

@@ -13,7 +13,7 @@ func TestDropWaitsForLoadedColumn(test *testing.T) {
 	var fixture, player = placeTestSetup(test)
 	var srv = fixture.srv
 	srv.restoreEntities("world", []storage.EntityData{
-		{ID: 264, Count: 1, X: -0.25, Y: 65, Age: 1999, PickupDelay: 2, SpeedY: 0.25},
+		{ID: 264, Count: 1, X: -0.25, Y: 65, Age: 1999, PickupDelay: 2, SpeedY: 0.25, OnGround: true},
 		{ID: 4, Count: 1, X: -0.25, Y: 65, PickupDelay: entity.InfinitePickupDelay},
 		{ID: 1, Count: 1, X: -0.25, Y: 65},
 	})
@@ -21,7 +21,7 @@ func TestDropWaitsForLoadedColumn(test *testing.T) {
 	srv.world.GetBlock(0, 65, 0)
 	srv.tickDroppedItems()
 	var first = srv.entities[1]
-	if first == nil || first.Age != 1999 || first.PickupDelay != 2 || first.Y != 65 || first.SpeedY != 0.25 || len(srv.entities) != 3 || srv.world.LoadedChunkCount() != 1 {
+	if first == nil || first.Age != 1999 || first.PickupDelay != 2 || first.Y != 65 || first.SpeedY != 0.25 || !first.OnGround || len(srv.entities) != 3 || srv.world.LoadedChunkCount() != 1 {
 		test.Fatalf("期望未加载列的三份物品原样保留，实际 %+v / %d 个实体 / %d 列", first, len(srv.entities), srv.world.LoadedChunkCount())
 	}
 	player.X = 32

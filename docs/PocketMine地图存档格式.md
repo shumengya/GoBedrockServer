@@ -64,4 +64,15 @@ go run ./cmd/import-world -source "./pocketmine服务器参考/worlds/world" -de
 
 物品的 `tag` 在磁盘上是大端 NBT；进入背包时改为小端、根名变为空串，嵌套列表保留元素类型及顺序。可对照 [Item::nbtDeserialize](../pocketmine服务器参考/src/pocketmine/item/Item.php) 与[背包协议](PocketMine背包与合成协议.md)。
 
-遇到不支持的方块实体或扩展字段（例如容器的 `CustomName`、`Lock`），导入器会指出区域、区块和出错记录，不发布新世界。非空普通实体列表、待处理刻、自定义生成器预设、超出 32 位范围的种子、超过 255 的方块 ID 和 LevelDB 仍不支持。本工具只做 PocketMine → Go 的转换。
+区块中 `Entities` 列表里，`id="Item"` 表示一份掉落物。注意与嵌套的 `Item.id` 区分：前者决定实体种类，后者决定地上的物品是什么。导入器逐条写入本服的 `entities.json`，不合并相同物品。
+
+| 掉落物磁盘字段 | 类型 | 本服读取方式 |
+|---|---|---|
+| `Pos`、`Motion` | 各 3 个 Double | 世界位置和每刻速度，转成本服运行时的 float32；未写速度时为零 |
+| `Rotation`、`OnGround` | 2 个 Float、1 个 Byte | 依次为 yaw、pitch；另存是否着地 |
+| `Item` | Compound | 物品 ID、meta、数量和附加 NBT，转换规则与箱内物品相同 |
+| `Age`、`PickupDelay` | Short | 已存活的刻数、玩家可拾取前的剩余刻数。32767 表示永久不可由玩家拾取 |
+
+参考端的[掉落物实现](../pocketmine服务器参考/src/pocketmine/entity/Item.php)不承受跌落伤害，因此不迁移累计跌落距离。未实现的归属、药水效果、着火或受伤状态等会报错；不会把带这些状态的物品当作普通物品。落地后的运动和寿命规则见[本服存储说明](持久化存储.md)。
+
+遇到不支持的实体、方块实体或扩展字段（例如容器的 `CustomName`、`Lock`），导入器会指出区域、区块和出错记录，不发布新世界。除掉落物外的普通实体、待处理刻、自定义生成器预设、超出 32 位范围的种子、超过 255 的方块 ID 和 LevelDB 仍不支持。本工具只做 PocketMine → Go 的转换。
