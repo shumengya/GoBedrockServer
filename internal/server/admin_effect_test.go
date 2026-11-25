@@ -1,10 +1,67 @@
 package server
 
+import "bytes"
 import "strings"
 import "testing"
 import "go-mc-server/internal/command"
 import "go-mc-server/internal/protocol"
 import "go-mc-server/internal/protocol/packets"
+
+// 用命令触发真实结算：瞬时药默认一刻，显式时长逐刻生效，普通药仍按秒换算。
+func TestEffectCommandPotionDuration(test *testing.T) {
+	var fixture = newAdminFixture(test)
+	var player = fixture.join("Alex", "127.0.0.1", "world")
+	var reply = ""
+	var ctx = &command.Context{IsOp: true, Admin: fixture.admin(), Reply: func(msg string) { reply = msg }}
+	player.combat.Health = 8
+	fixture.srv.cmds.Dispatch(ctx, "effect Alex 6")
+	fixture.srv.tickEffects(player)
+	if player.Health() != 12 || len(player.combat.Effects) != 0 || !strings.Contains(reply, "1 刻") {
+		test.Fatalf("期望默认一刻治疗后回到 12 点生命并移除，实际 %v / %+v / %s", player.Health(), player.combat.Effects, reply)
+	}
+	fixture.srv.cmds.Dispatch(ctx, "effect Alex healing 2")
+	fixture.srv.tickEffects(player)
+	fixture.srv.tickEffects(player)
+	if player.Health() != 20 || len(player.combat.Effects) != 0 || !strings.Contains(reply, "2 刻") {
+		test.Fatalf("期望显式两刻各治疗一次，实际 %v / %+v / %s", player.Health(), player.combat.Effects, reply)
+	}
+	fixture.srv.cmds.Dispatch(ctx, "effect Alex harming")
+	fixture.srv.tickEffects(player)
+	if player.Health() != 14 || len(player.combat.Effects) != 0 {
+		test.Fatalf("期望瞬时伤害扣 6 后到期，实际 %v / %+v", player.Health(), player.combat.Effects)
+	}
+	fixture.srv.cmds.Dispatch(ctx, "effect Alex jump 2")
+	if player.combat.Effects[8].Duration != 40 || !strings.Contains(reply, "2 秒") {
+		test.Fatalf("期望跳跃别名对应 40 刻，实际 %+v / %s", player.combat.Effects, reply)
+	}
+}
+
+// 命令添加效果后，当事人须收到移速属性，同世界的其他玩家须收到隐身标志。
+func TestEffectCommandPotionSync(test *testing.T) {
+	var fixture = newAdminFixture(test)
+	var player = fixture.join("Alex", "127.0.0.1", "world")
+	var viewer = fixture.join("Steve", "127.0.0.2", "world")
+	var ctx = &command.Context{IsOp: true, Admin: fixture.admin(), Reply: func(string) {}}
+	var movement, flags []byte
+	player.Session.SentHook = func(raw []byte) {
+		if raw[0] == protocol.IDUpdateAttributes {
+			movement = bytes.Clone(raw)
+		}
+	}
+	viewer.Session.SentHook = func(raw []byte) {
+		if raw[0] == protocol.IDSetEntityData {
+			flags = bytes.Clone(raw)
+		}
+	}
+	fixture.srv.cmds.Dispatch(ctx, "effect Alex speed 8 1")
+	fixture.srv.cmds.Dispatch(ctx, "effect Alex invisibility")
+	var wantSpeed, _ = packets.EncodePacket(&packets.UpdateAttributesPacket{EntityRuntimeID: player.EntityRuntimeID, Attributes: []packets.Attribute{packets.MovementAttribute(0.14)}})
+	var invisible = packets.DefaultPlayerFlags()&^(uint64(3)<<14) | 32
+	var wantFlags, _ = packets.EncodePacket(&packets.SetEntityDataPacket{EntityRuntimeID: player.EntityRuntimeID, Flags: invisible, SendFlags: true})
+	if !bytes.Equal(movement, wantSpeed) || !bytes.Equal(flags, wantFlags) {
+		test.Fatalf("期望命令同步迅捷 II 和隐身标志，实际 %x / %x", movement, flags)
+	}
+}
 
 // 从命令分派一直检查到效果包、存档和玩家属性：秒数要换算成刻，清单项不能误删其他效果。
 func TestEffectCommandLifecycle(test *testing.T) {
@@ -55,7 +112,7 @@ func TestEffectCommandRejectsInvalid(test *testing.T) {
 		test.Fatalf("期望普通玩家无权操作，实际 %+v", player.combat.Effects)
 	}
 	ctx.IsOp = true
-	var invalid = []string{"speed", "19 -1", "19 107374183", "19 10 256", "19 3 1 maybe", "clear 2"}
+	var invalid = []string{"unknown", "19 -1", "19 107374183", "6 2147483648", "19 10 256", "19 3 1 maybe", "clear 2"}
 	var index = 0
 	for index = 0; index < len(invalid); index++ {
 		reply = ""

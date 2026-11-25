@@ -88,6 +88,7 @@ func (admin serverAdmin) SetEffect(name string, id, ticks, amplifier int32, hidd
 		if !player.addEffect(storage.EffectData{ID: id, Amplifier: amplifier, Duration: ticks, HideParticles: hidden}) {
 			return "", fmt.Errorf("%s 已死亡或已有更强、更久的同种效果", player.Username)
 		}
+		admin.srv.syncPotionChange(player, id)
 		return player.Username, nil
 	}
 	player.mu.Lock()

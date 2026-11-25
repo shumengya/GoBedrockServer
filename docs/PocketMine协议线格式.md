@@ -99,7 +99,14 @@ RakNet 版本 **8** 与游戏协议号 **113** 位于不同层。离线握手依
 
 管理员可以用 `/effect Alex absorption 8 1 true` 对照这两个包。玩家原本没有吸收时，`MobEffect` 的操作是 1，效果 ID 是 22，增幅是 1（吸收 II），显示粒子是 false，持续时间是 160 tick；对应的属性更新会给 8 点吸收生命值。命令最后一项表示**隐藏**粒子，包里的布尔值表示**显示**粒子，两者相反。重登后沿用剩余刻数和粒子设置。
 
-本服目前支持 `nausea`（9）、`regeneration`（10）、`resistance`（11）、`fire_resistance`（12）、`hunger`（17）、`poison`（19）和 `absorption`（22）。名字和数字均可；省略时长时与[参考端命令](../pocketmine服务器参考/src/pocketmine/command/defaults/EffectCommand.php)一样是 **300 tick（15 秒）**，显式传入的时长才按秒换算。`/effect Alex 22 0` 只移除吸收，`/effect Alex clear` 清除全部。只有管理员或控制台能执行。
+管理员或控制台可以按名称或数字指定效果。时长规则与[参考端命令](../pocketmine服务器参考/src/pocketmine/command/defaults/EffectCommand.php)一致：
+
+| 命令时长单位 | 可用名称（括号内是效果 ID） | 省略时长 |
+| --- | --- | --- |
+| 刻 | `healing`（6）、`harming`（7） | 1 刻，下一次效果更新结算 |
+| 秒 | `speed`（1）、`slowness`（2）、`strength`（5）、`jump_boost`（8）、`nausea`（9）、`regeneration`（10）、`resistance`（11）、`fire_resistance`（12）、`water_breathing`（13）、`invisibility`（14）、`night_vision`（16）、`hunger`（17）、`weakness`（18）、`poison`（19）、`absorption`（22） | 15 秒，即 300 刻 |
+
+例如，`/effect Alex healing 2` 连续两刻治疗，`/effect Alex jump 2` 则给予 40 刻跳跃提升。`jump`、`confusion` 和 `damage_resistance` 分别是 8、9、11 的别名。`/effect Alex 22 0` 只移除吸收，`/effect Alex clear` 清除全部。迅捷和迟缓另外更新当事人的移动属性；隐身通过实体元数据同步给观察者。
 
 ### 喝完一瓶药水
 
