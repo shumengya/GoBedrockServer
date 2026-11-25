@@ -9,10 +9,12 @@ import "io"
 
 // 地图文件是大端 NBT；不能用游戏包里的 VarInt 或物品栈的小端 NBT 读取。
 type pmTag struct {
-	kind   byte
-	raw    []byte
-	fields map[string]pmTag
-	list   []pmTag
+	kind    byte
+	raw     []byte
+	fields  map[string]pmTag
+	names   []string
+	element byte
+	list    []pmTag
 }
 
 type pmReader struct {
@@ -75,6 +77,7 @@ func (reader *pmReader) tag(kind byte, depth int) (pmTag, error) {
 		if count < 0 || count > reader.budget || count > len(reader.data) {
 			return result, fmt.Errorf("NBT 列表长度无效: %d", count)
 		}
+		result.element = header[0]
 		result.list = make([]pmTag, count)
 		var index = 0
 		for index = 0; index < count; index++ {
@@ -97,7 +100,12 @@ func (reader *pmReader) tag(kind byte, depth int) (pmTag, error) {
 			if nameErr != nil {
 				return result, nameErr
 			}
-			result.fields[string(name)], err = reader.tag(child[0], depth+1)
+			var key = string(name)
+			if result.fields[key].kind != 0 {
+				return result, fmt.Errorf("地图 NBT 字段重复: %s", key)
+			}
+			result.names = append(result.names, key)
+			result.fields[key], err = reader.tag(child[0], depth+1)
 			if err != nil {
 				return result, err
 			}
@@ -116,6 +124,8 @@ func (tag pmTag) integer(name string, kind byte) (int64, error) {
 	switch kind {
 	case 1:
 		return int64(int8(value.raw[0])), nil
+	case 2:
+		return int64(int16(binary.BigEndian.Uint16(value.raw))), nil
 	case 3:
 		return int64(int32(binary.BigEndian.Uint32(value.raw))), nil
 	case 4:

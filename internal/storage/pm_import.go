@@ -110,6 +110,7 @@ func ImportPMWorld(source, dest string) (int, error) {
 		return 0, stageErr
 	}
 	defer os.RemoveAll(stage)
+	var tiles []TileRecord = nil
 	var columns, index = 0, 0
 	for index = 0; index < len(entries); index++ {
 		var filename = entries[index].Name()
@@ -126,11 +127,16 @@ func ImportPMWorld(source, dest string) (int, error) {
 		if _, err = os.Stat(output); err == nil {
 			return 0, fmt.Errorf("重复区域: %s", filename)
 		}
-		var count, regionErr = importPMRegion(filepath.Join(dir, "region", filename), output, match[3], int32(regionX), int32(regionZ))
+		var count, regionErr = importPMRegion(filepath.Join(dir, "region", filename), output, match[3], int32(regionX), int32(regionZ), &tiles)
 		if regionErr != nil {
 			return 0, fmt.Errorf("%s: %w", filename, regionErr)
 		}
 		columns += count
+	}
+	if len(tiles) > 0 {
+		if err = saveTileRecords(filepath.Join(stage, TilesFile), tiles); err != nil {
+			return 0, err
+		}
 	}
 	if err = SaveWorldMeta(filepath.Join(stage, WorldMetaFile), meta); err != nil {
 		return 0, err
@@ -144,7 +150,7 @@ func ImportPMWorld(source, dest string) (int, error) {
 	return columns, nil
 }
 
-func importPMRegion(input, output, format string, regionX, regionZ int32) (int, error) {
+func importPMRegion(input, output, format string, regionX, regionZ int32, tiles *[]TileRecord) (int, error) {
 	var file, err = os.Open(input)
 	if err != nil {
 		return 0, err
@@ -192,6 +198,11 @@ func importPMRegion(input, output, format string, regionX, regionZ int32) (int, 
 		if columnErr != nil {
 			return 0, fmt.Errorf("区块 (%d,%d): %w", chunkX, chunkZ, columnErr)
 		}
+		var added, tileErr = pmTiles(level.fields["TileEntities"], int32(chunkX), int32(chunkZ))
+		if tileErr != nil {
+			return 0, fmt.Errorf("区块 (%d,%d) TileEntities: %w", chunkX, chunkZ, tileErr)
+		}
+		*tiles = append(*tiles, added...)
 		region.slots[slot], err = deflate(column.EncodeDisk())
 		if err != nil {
 			return 0, err
@@ -202,7 +213,7 @@ func importPMRegion(input, output, format string, regionX, regionZ int32) (int, 
 }
 
 func pmColumn(level pmTag, format string) (*world.Chunk, error) {
-	var lists = [...]string{"Entities", "TileEntities", "TileTicks"}
+	var lists = [...]string{"Entities", "TileTicks"}
 	var index = 0
 	for index = 0; index < len(lists); index++ {
 		var tag = level.fields[lists[index]]

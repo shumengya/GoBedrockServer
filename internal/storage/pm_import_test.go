@@ -49,7 +49,7 @@ func pmTestLevel(test *testing.T, dir string) {
 	}
 }
 
-func pmTestRegion(test *testing.T, dir, format string, hasTile bool) {
+func pmTestRegion(test *testing.T, dir, format string, extra []byte) {
 	var fields = pmTestField("xPos", 3, []byte{255, 255, 255, 255})
 	fields = append(fields, pmTestField("zPos", 3, []byte{0, 0, 0, 32})...)
 	// 区块 (-1,32)，局部 (2,37,3) 是羊毛:11，邻格的半字节不同以暴露奇偶翻转。
@@ -64,6 +64,8 @@ func pmTestRegion(test *testing.T, dir, format string, hasTile bool) {
 		var values = make([]byte, 2048)
 		if format == "mca" {
 			ids[1330], values[665] = 35, 0x2b
+			ids[1331], ids[1332], ids[1333], ids[1334] = 54, 54, 61, 154
+			copy(ids[1335:], []byte{63, 26, 144, 140, 199, 130})
 		} else {
 			ids[565], values[282] = 35, 0xb2
 		}
@@ -72,9 +74,7 @@ func pmTestRegion(test *testing.T, dir, format string, hasTile bool) {
 		section = append(section, pmTestArray("Data", values)...)
 		fields = append(fields, pmTestList("Sections", 10, 1, append(section, 0))...)
 	}
-	if hasTile {
-		fields = append(fields, pmTestList("TileEntities", 10, 1, []byte{0})...)
-	}
+	fields = append(fields, extra...)
 	var biomes = make([]byte, 256)
 	biomes[50] = 23
 	fields = append(fields, pmTestArray("Biomes", biomes)...)
@@ -108,7 +108,7 @@ func TestPMImportTerrain(test *testing.T) {
 		var source = test.TempDir()
 		var target = filepath.Join(test.TempDir(), "Mine")
 		pmTestLevel(test, source)
-		pmTestRegion(test, source, formats[index], false)
+		pmTestRegion(test, source, formats[index], nil)
 		var count, err = storage.ImportPMWorld(source, target)
 		if err != nil || count != 1 {
 			test.Fatalf("期望导入 %s 一列，实际 %d / %v", formats[index], count, err)
@@ -134,7 +134,7 @@ func TestPMImportRefusesLoss(test *testing.T) {
 	var source = test.TempDir()
 	var target = filepath.Join(test.TempDir(), "Mine")
 	pmTestLevel(test, source)
-	pmTestRegion(test, source, "mca", true)
+	pmTestRegion(test, source, "mca", pmTestList("TileEntities", 10, 1, []byte{0}))
 	var _, err = storage.ImportPMWorld(source, target)
 	if err == nil || !strings.Contains(err.Error(), "TileEntities") {
 		test.Fatalf("期望报告不支持的方块实体，实际 %v", err)

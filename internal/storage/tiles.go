@@ -52,6 +52,10 @@ func SaveTiles(dataDir, worldName string, list []TileRecord) error {
 	if err := os.MkdirAll(WorldDir(dataDir, worldName), 0o755); err != nil {
 		return err
 	}
+	return saveTileRecords(TilesPath(dataDir, worldName), list)
+}
+
+func saveTileRecords(path string, list []TileRecord) error {
 	if list == nil {
 		list = []TileRecord{}
 	}
@@ -60,7 +64,6 @@ func SaveTiles(dataDir, worldName string, list []TileRecord) error {
 		return err
 	}
 	raw = append(raw, '\n')
-	path := TilesPath(dataDir, worldName)
 	tmp := path + ".tmp"
 	if err := os.WriteFile(tmp, raw, 0o644); err != nil {
 		return err
