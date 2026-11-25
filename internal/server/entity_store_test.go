@@ -8,6 +8,34 @@ import "go-mc-server/internal/entity"
 import "go-mc-server/internal/protocol"
 import "go-mc-server/internal/storage"
 
+// 区块加载前，重启恢复的物品既不老化也不能被拾取；加载后继续倒计时，永久延迟保持原值。
+func TestDropWaitsForLoadedColumn(test *testing.T) {
+	var fixture, player = placeTestSetup(test)
+	var srv = fixture.srv
+	srv.restoreEntities("world", []storage.EntityData{
+		{ID: 264, Count: 1, X: -0.25, Y: 65, Age: 1999, PickupDelay: 2, SpeedY: 0.25},
+		{ID: 4, Count: 1, X: -0.25, Y: 65, PickupDelay: entity.InfinitePickupDelay},
+		{ID: 1, Count: 1, X: -0.25, Y: 65},
+	})
+	// 玩家和物品足够近，但处于相邻的两列。
+	srv.world.GetBlock(0, 65, 0)
+	srv.tickDroppedItems()
+	var first = srv.entities[1]
+	if first == nil || first.Age != 1999 || first.PickupDelay != 2 || first.Y != 65 || first.SpeedY != 0.25 || len(srv.entities) != 3 || srv.world.LoadedChunkCount() != 1 {
+		test.Fatalf("期望未加载列的三份物品原样保留，实际 %+v / %d 个实体 / %d 列", first, len(srv.entities), srv.world.LoadedChunkCount())
+	}
+	player.X = 32
+	srv.world.GetBlock(-1, 65, 0)
+	srv.tickDroppedItems()
+	if first.Age != 2000 || first.PickupDelay != 1 || first.Y <= 65 || srv.entities[2].PickupDelay != 32767 {
+		test.Fatalf("期望加载后恢复物理和计时、永久延迟不变，实际 %+v / %d", first, srv.entities[2].PickupDelay)
+	}
+	srv.tickDroppedItems()
+	if srv.entities[1] != nil {
+		test.Fatalf("期望过期物品消失，实际 %+v", srv.entities[1])
+	}
+}
+
 // 写盘后重新构造整台服务器：跨世界的同种生物不串档，名字、姿态及旧格式掉落物均能恢复。
 func TestSummonedEntityRestart(test *testing.T) {
 	var cfg = config.Default()

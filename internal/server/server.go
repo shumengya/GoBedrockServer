@@ -1127,8 +1127,11 @@ func (srv *Server) tickDroppedItems() {
 		if !e.IsDroppedItem() {
 			continue
 		}
+		if !srv.dropColumnLoaded(e) {
+			continue
+		}
 		e.Age++
-		if e.PickupDelay > 0 {
+		if e.PickupDelay > 0 && e.PickupDelay != entity.InfinitePickupDelay {
 			e.PickupDelay--
 		}
 		wn := e.WorldName
@@ -1171,6 +1174,12 @@ func (srv *Server) tickDroppedItems() {
 			srv.tryPickupFor(p)
 		}
 	}
+}
+
+func (srv *Server) dropColumnLoaded(drop *entity.Instance) bool {
+	// 只查列是否驻留；用有效高度，避免越过建筑高度的物品被 Peek 当作已加载空气。
+	var _, _, loaded = srv.worldByName(drop.WorldName).Peek(int32(math.Floor(float64(drop.X))), 0, int32(math.Floor(float64(drop.Z))))
+	return loaded
 }
 
 func (srv *Server) itemSolidIn(worldName string, x, y, z float32) bool {
@@ -1223,6 +1232,9 @@ func (srv *Server) tryPickupFor(p *Player) {
 			continue
 		}
 		if !entity.CanPickupItem(px, py, pz, e.X, e.Y, e.Z) {
+			continue
+		}
+		if !srv.dropColumnLoaded(e) {
 			continue
 		}
 		if !creative && !p.CanAddItem(e.Item) {

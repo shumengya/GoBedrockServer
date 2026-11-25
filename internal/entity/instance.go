@@ -3,9 +3,10 @@ package entity
 import "go-mc-server/internal/protocol"
 
 const (
-	NetworkIDItem    int32 = 64
-	PickupDelayTicks       = 40
-	ItemDespawnTicks       = 2000
+	NetworkIDItem       int32 = 64
+	PickupDelayTicks          = 40
+	InfinitePickupDelay       = 32767
+	ItemDespawnTicks          = 2000
 )
 
 // Instance is a spawned entity in the world.
