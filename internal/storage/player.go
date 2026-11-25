@@ -53,6 +53,7 @@ type EffectData struct {
 	ID        int32 `json:"id"`
 	Amplifier int32 `json:"amplifier"`
 	Duration  int32 `json:"duration"`
+	HideParticles bool `json:"hideParticles,omitempty"`
 }
 
 func LoadPlayer(dataDir, uuid string) (PlayerData, bool, error) {

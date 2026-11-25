@@ -40,6 +40,7 @@ func AdminCommands() []Command {
 		adminCommand{name: "say", usage: "/say <消息>", description: "向全服广播消息", opOnly: true, run: runSay},
 		adminCommand{name: "tell", aliases: []string{"msg", "w"}, usage: "/tell <玩家> <消息>", description: "私聊", run: runTell},
 		adminCommand{name: "kill", usage: "/kill [玩家]", description: "自杀；管理员可击杀他人", run: runKill},
+		adminCommand{name: "effect", usage: effectSyntax, description: "施加或清除玩家状态效果", opOnly: true, run: runEffect},
 		adminCommand{name: "time", usage: timeSyntax, description: "查询或调整当前世界或全部世界的时间", opOnly: true, run: runTime},
 		adminCommand{name: "stop", usage: "/stop", description: "保存并关闭服务器", opOnly: true, run: runStop},
 		adminCommand{name: "save-all", aliases: []string{"saveall"}, usage: "/save-all", description: "立即保存全部数据", opOnly: true, run: runSaveAll},

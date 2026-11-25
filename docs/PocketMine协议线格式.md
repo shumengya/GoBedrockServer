@@ -97,6 +97,10 @@ RakNet 版本 **8** 与游戏协议号 **113** 位于不同层。离线握手依
 
 普通金苹果结算成功后，Go 服务端分别发送再生（效果 ID 10，强度索引 1，100 tick）和吸收（ID 22，强度索引 0，2400 tick）的新增事件。强度从 0 算起，100 tick 是 5 秒。再次施加同种效果时使用修改事件，到期使用移除事件；剩余吸收血量另走 `UpdateAttributes` 的 `minecraft:absorption` 属性，所以效果还在不代表还有满额的额外血量。
 
+管理员可以用 `/effect Alex absorption 8 1 true` 对照这两个包。玩家原本没有吸收时，`MobEffect` 的操作是 1，效果 ID 是 22，增幅是 1（吸收 II），显示粒子是 false，持续时间是 160 tick；对应的属性更新会给 8 点吸收生命值。命令最后一项表示**隐藏**粒子，包里的布尔值表示**显示**粒子，两者相反。重登后沿用剩余刻数和粒子设置。
+
+本服目前支持 `nausea`（9）、`regeneration`（10）、`resistance`（11）、`fire_resistance`（12）、`hunger`（17）、`poison`（19）和 `absorption`（22）。名字和数字均可；省略时长时与[参考端命令](../pocketmine服务器参考/src/pocketmine/command/defaults/EffectCommand.php)一样是 **300 tick（15 秒）**，显式传入的时长才按秒换算。`/effect Alex 22 0` 只移除吸收，`/effect Alex clear` 清除全部。只有管理员或控制台能执行。
+
 ### 漏斗搬运时客户端收到什么
 
 漏斗用 `30 ContainerOpen`（窗口类型 8），接着用 `34 ContainerSetContent` 发五格初始内容。自动搬运时无需客户端请求，服务端只向正在看相关容器的玩家发 `32 ContainerSetSlot`；双箱后半的第 2 格对应窗口槽号 29（从零计）。漏斗吸走掉落物用 `0E RemoveEntity` 通知同世界的玩家，没有玩家拾取者。

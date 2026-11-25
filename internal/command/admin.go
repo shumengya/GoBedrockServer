@@ -14,6 +14,7 @@ type Admin interface {
 
 	Kick(name string, reason string) (string, error)
 	Kill(name string) (string, error)
+	SetEffect(name string, id, ticks, amplifier int32, hidden bool) (string, error)
 
 	// Ban 和 BanIP 的第二个返回值表示是否新增（已封禁则为 false）。
 	// 玩家不在线也能封，按字面名字写进名单。

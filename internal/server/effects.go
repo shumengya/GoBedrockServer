@@ -1,6 +1,7 @@
 package server
 
 import "maps"
+import "fmt"
 import "slices"
 
 import "go-mc-server/internal/protocol"
@@ -48,16 +49,16 @@ func foodEffects(item protocol.Item, random dropRandom) []storage.EffectData {
 
 func (player *Player) sendEffect(event byte, effect storage.EffectData) {
 	if player.Session != nil {
-		player.Session.SendPacket(&packets.MobEffectPacket{EntityRuntimeID: player.EntityRuntimeID, Event: event, EffectID: effect.ID, Amplifier: effect.Amplifier, Duration: effect.Duration, Particles: event != packets.MobEffectRemove})
+		player.Session.SendPacket(&packets.MobEffectPacket{EntityRuntimeID: player.EntityRuntimeID, Event: event, EffectID: effect.ID, Amplifier: effect.Amplifier, Duration: effect.Duration, Particles: event != packets.MobEffectRemove && !effect.HideParticles})
 	}
 }
 
-func (player *Player) addEffect(effect storage.EffectData) {
+func (player *Player) addEffect(effect storage.EffectData) bool {
 	player.mu.Lock()
 	var old storage.EffectData = player.combat.Effects[effect.ID]
 	if player.combat.Dead || old.Amplifier > effect.Amplifier || (old.Amplifier == effect.Amplifier && old.Duration > effect.Duration) {
 		player.mu.Unlock()
-		return
+		return false
 	}
 	if player.combat.Effects == nil {
 		player.combat.Effects = make(map[int32]storage.EffectData)
@@ -75,6 +76,40 @@ func (player *Player) addEffect(effect storage.EffectData) {
 	if effect.ID == effectAbsorption {
 		player.sendAbsorption()
 	}
+	return true
+}
+
+func (admin serverAdmin) SetEffect(name string, id, ticks, amplifier int32, hidden bool) (string, error) {
+	var player, err = admin.lookupPlaying(name)
+	if err != nil {
+		return "", err
+	}
+	if ticks > 0 {
+		if !player.addEffect(storage.EffectData{ID: id, Amplifier: amplifier, Duration: ticks, HideParticles: hidden}) {
+			return "", fmt.Errorf("%s 已死亡或已有更强、更久的同种效果", player.Username)
+		}
+		return player.Username, nil
+	}
+	player.mu.Lock()
+	var removed = player.combat.Effects
+	if id != 0 {
+		var effect, found = removed[id]
+		if !found {
+			player.mu.Unlock()
+			return "", fmt.Errorf("%s 当前没有效果 %d", player.Username, id)
+		}
+		delete(removed, id)
+		removed = map[int32]storage.EffectData{id: effect}
+	} else {
+		player.combat.Effects = nil
+	}
+	var clearAbsorption = (id == 0 || id == effectAbsorption) && player.combat.Absorption != 0
+	if clearAbsorption {
+		player.combat.Absorption = 0
+	}
+	player.mu.Unlock()
+	player.sendRemovedEffects(removed, clearAbsorption)
+	return player.Username, nil
 }
 
 func (player *Player) sendAbsorption() {
@@ -141,5 +176,16 @@ func (player *Player) syncEffects(event byte) {
 			effect = storage.EffectData{ID: id}
 		}
 		player.sendEffect(event, effect)
+	}
+}
+
+func (player *Player) sendRemovedEffects(removed map[int32]storage.EffectData, hadAbsorption bool) {
+	var ids = slices.Sorted(maps.Keys(removed))
+	var index = 0
+	for index = 0; index < len(ids); index++ {
+		player.sendEffect(packets.MobEffectRemove, removed[ids[index]])
+	}
+	if hadAbsorption {
+		player.sendAbsorption()
 	}
 }

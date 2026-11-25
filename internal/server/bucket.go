@@ -1,8 +1,5 @@
 package server
 
-import "maps"
-import "slices"
-
 import "go-mc-server/internal/blockrule"
 import "go-mc-server/internal/protocol"
 import "go-mc-server/internal/protocol/packets"
@@ -125,14 +122,7 @@ func (srv *Server) drinkMilk(player *Player) {
 	var hadAbsorption = player.combat.Absorption > 0
 	player.combat.Effects, player.combat.Absorption = nil, 0
 	player.mu.Unlock()
-	var ids = slices.Sorted(maps.Keys(removed))
-	var index = 0
-	for index = 0; index < len(ids); index++ {
-		player.sendEffect(packets.MobEffectRemove, removed[ids[index]])
-	}
-	if hadAbsorption {
-		player.sendAbsorption()
-	}
+	player.sendRemovedEffects(removed, hadAbsorption)
 	srv.broadcastInWorld(srv.playerWorldName(player), &packets.EntityEventPacket{EntityRuntimeID: player.EntityRuntimeID, Event: packets.EntityEventUseItem}, "")
 	srv.syncBucket(player, overflow)
 }
