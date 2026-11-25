@@ -2,6 +2,7 @@ package server
 
 import "go-mc-server/internal/protocol/packets"
 import "go-mc-server/internal/storage"
+import "time"
 
 const itemPotion int32 = 373
 const itemGlassBottle int32 = 374
@@ -9,6 +10,8 @@ const itemGlassBottle int32 = 374
 const (
 	effectSpeed          = 1
 	effectSlowness       = 2
+	effectHaste          = 3
+	effectFatigue        = 4
 	effectStrength       = 5
 	effectHealing        = 6
 	effectHarming        = 7
@@ -45,7 +48,11 @@ func (srv *Server) applyPotion(player *Player, meta int32) {
 func (player *Player) effectLevel(id int32) int32 {
 	player.mu.RLock()
 	defer player.mu.RUnlock()
-	var effect = player.combat.Effects[id]
+	return player.combat.effectLevel(id)
+}
+
+func (state *combatState) effectLevel(id int32) int32 {
+	var effect = state.Effects[id]
 	if effect.Duration <= 0 {
 		return 0
 	}
@@ -58,6 +65,8 @@ func (player *Player) potionSpeed() float32 {
 
 func (srv *Server) syncPotionChange(player *Player, id int32) {
 	switch id {
+	case effectHaste, effectFatigue:
+		srv.refreshMiningSpeed(player, time.Now())
 	case effectHealthBoost:
 		if player.Session != nil {
 			var vitals = player.vitals()

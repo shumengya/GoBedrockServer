@@ -36,7 +36,7 @@ func TestBreakTimeTicks(test *testing.T) {
 	var index int = 0
 	for index = 0; index < len(cases); index++ {
 		var current breakTimeCase = cases[index]
-		var got int32 = breakTimeTicks(current.block, current.item)
+		var got int32 = breakTimeTicks(current.block, current.item, 0, 0)
 		if got != current.want {
 			test.Errorf("%s: block=%d item=%d got %d want %d", current.name, current.block, current.item, got, current.want)
 		}

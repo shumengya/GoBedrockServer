@@ -12,7 +12,8 @@ var effectNames = [...]struct {
 	id          int32
 	name, alias string
 }{
-	{1, "speed", ""}, {2, "slowness", ""}, {5, "strength", ""}, {6, "healing", ""}, {7, "harming", ""},
+	{1, "speed", ""}, {2, "slowness", ""}, {3, "haste", "swiftness"}, {4, "mining_fatigue", "fatigue"},
+	{5, "strength", ""}, {6, "healing", ""}, {7, "harming", ""},
 	{8, "jump_boost", "jump"}, {9, "nausea", "confusion"}, {10, "regeneration", ""}, {11, "resistance", "damage_resistance"},
 	{12, "fire_resistance", ""}, {13, "water_breathing", ""}, {14, "invisibility", ""}, {15, "blindness", ""}, {16, "night_vision", ""},
 	{17, "hunger", ""}, {18, "weakness", ""}, {19, "poison", ""}, {20, "wither", ""}, {21, "health_boost", ""}, {22, "absorption", ""}, {23, "saturation", ""},

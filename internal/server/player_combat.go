@@ -57,13 +57,15 @@ type combatState struct {
 
 // miningState 记录玩家正在挖的方块，RemoveBlock 时用来校验挖掘时间。
 type miningState struct {
-	Active  bool
-	BlockX  int32
-	BlockY  int32
-	BlockZ  int32
-	BlockID byte
-	Started time.Time
-	Ticks   int32
+	Active   bool
+	BlockX   int32
+	BlockY   int32
+	BlockZ   int32
+	BlockID  byte
+	ToolID   int32
+	Progress float64
+	Started  time.Time
+	Ticks    int32
 }
 
 // 生命上限由当前效果决定，不另存一份，避免清除效果或读档时留下旧上限。

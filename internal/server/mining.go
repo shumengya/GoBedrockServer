@@ -136,26 +136,55 @@ func (srv *Server) startBreak(player *Player, pkt *packets.PlayerActionPacket) {
 	var blockWorld *world.World = srv.playerWorld(player)
 	var blockID byte = 0
 	blockID, _ = blockWorld.GetBlock(pkt.X, pkt.Y, pkt.Z)
-	var ticks int32 = breakTimeTicks(blockID, player.heldSnapshot().ID)
-	player.startMining(miningState{
+	player.mu.Lock()
+	var toolID = player.HeldItem.ID
+	var ticks = breakTimeTicks(blockID, toolID, player.combat.effectLevel(effectHaste), player.combat.effectLevel(effectFatigue))
+	player.mining = miningState{
 		Active:  true,
 		BlockX:  pkt.X,
 		BlockY:  pkt.Y,
 		BlockZ:  pkt.Z,
 		BlockID: blockID,
+		ToolID:  toolID,
 		Started: time.Now(),
 		Ticks:   ticks,
-	})
-	if ticks <= 0 || player.gameMode() == int32(protocol.GameModeCreative) {
+	}
+	var state = player.mining
+	player.mu.Unlock()
+	srv.sendMiningSpeed(player, state)
+}
+
+// 换速前按原速度计入已挖进度；喝奶、效果过期或升级都不应让玩家重新挖整块。
+func (srv *Server) refreshMiningSpeed(player *Player, now time.Time) {
+	player.mu.Lock()
+	var state = player.mining
+	if !state.Active || state.Ticks <= 0 {
+		player.mu.Unlock()
+		return
+	}
+	var ticks = breakTimeTicks(state.BlockID, state.ToolID, player.combat.effectLevel(effectHaste), player.combat.effectLevel(effectFatigue))
+	if ticks == state.Ticks {
+		player.mu.Unlock()
+		return
+	}
+	state.Progress = min(1, state.Progress+float64(now.Sub(state.Started))/(float64(50*time.Millisecond)*float64(state.Ticks)))
+	state.Started, state.Ticks = now, ticks
+	player.mining = state
+	player.mu.Unlock()
+	srv.sendMiningSpeed(player, state)
+}
+
+func (srv *Server) sendMiningSpeed(player *Player, state miningState) {
+	if state.Ticks <= 0 || player.gameMode() == int32(protocol.GameModeCreative) {
 		return
 	}
 	srv.broadcastLevelEvent(
 		srv.playerWorldName(player),
 		packets.LevelEventBlockStartBreak,
-		float32(pkt.X),
-		float32(pkt.Y),
-		float32(pkt.Z),
-		65535/ticks,
+		float32(state.BlockX),
+		float32(state.BlockY),
+		float32(state.BlockZ),
+		65535/state.Ticks,
 	)
 }
 
@@ -185,7 +214,7 @@ func breakRejectReason(
 	if !state.Active || !sameTarget || state.BlockID != blockID {
 		return "未开始挖掘"
 	}
-	var need time.Duration = time.Duration(float64(state.Ticks)*breakTimeTolerance) * 50 * time.Millisecond
+	var need time.Duration = time.Duration(float64(state.Ticks)*max(0, breakTimeTolerance-state.Progress)) * 50 * time.Millisecond
 	if now.Sub(state.Started) < need {
 		return "挖掘时间不足"
 	}
